@@ -171,7 +171,9 @@ async function submitComplaint() {
                 icon="lucide:git-branch"
                 :disabled="!current.asset_uuid"
                 title="Buka traceability asset package."
-                @click="router.push({ path: '/traceability', query: { asset: current!.asset_uuid } })"
+                @click="
+                  router.push({ path: '/traceability', query: { asset: current!.asset_uuid } })
+                "
               >
                 Telusuri jejak
               </AppButton>
@@ -266,5 +268,3 @@ async function submitComplaint() {
     </AppModal>
   </div>
 </template>
-
-

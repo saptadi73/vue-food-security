@@ -110,7 +110,10 @@ async function refreshPackageList() {
   await Promise.all([list.refresh(), loadAllocation()])
 }
 
-async function packageHolding(row: PackageData, action: 'start' | 'update' | 'release' | 'discard') {
+async function packageHolding(
+  row: PackageData,
+  action: 'start' | 'update' | 'release' | 'discard',
+) {
   const isFinal = action === 'release' || action === 'discard'
   if (isFinal) {
     const ok = await confirm.caution({
@@ -350,7 +353,11 @@ onMounted(() => {
             <Icon icon="lucide:check" :width="15" :height="15" />
           </button>
           <button
-            v-if="row.status === 'CREATED' || row.status === 'PACKAGED' || row.effective_status === 'EXPIRED'"
+            v-if="
+              row.status === 'CREATED' ||
+              row.status === 'PACKAGED' ||
+              row.effective_status === 'EXPIRED'
+            "
             type="button"
             class="grid size-8 place-items-center rounded-lg text-surface-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
             aria-label="Discard paket"
@@ -485,4 +492,3 @@ onMounted(() => {
     </AppModal>
   </div>
 </template>
-

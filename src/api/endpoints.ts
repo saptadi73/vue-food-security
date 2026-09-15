@@ -153,4 +153,3 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-

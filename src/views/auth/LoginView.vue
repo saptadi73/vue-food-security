@@ -60,8 +60,9 @@ async function submit() {
 </script>
 
 <template>
+  <!-- Layar auth selalu gelap, jadi token warna dipaksa memakai skala dark. -->
   <div
-    class="relative flex min-h-dvh items-center justify-center overflow-hidden bg-surface-950 p-4"
+    class="dark relative flex min-h-dvh items-center justify-center overflow-hidden bg-surface-950 p-4"
   >
     <!-- Latar dekoratif -->
     <div
@@ -165,13 +166,13 @@ async function submit() {
           Masuk
         </AppButton>
 
-        <p class="mt-5 text-center text-[11px] leading-relaxed text-surface-500">
+        <p class="mt-5 text-center text-[11px] leading-relaxed text-surface-400">
           Access token disimpan di memori dan refresh token di sessionStorage tab ini. Sesi berakhir
           saat tab ditutup.
         </p>
       </form>
 
-      <p class="mt-5 text-center font-mono text-[11px] text-surface-600">{{ env.apiBase }}</p>
+      <p class="mt-5 text-center font-mono text-[11px] text-surface-400">{{ env.apiBase }}</p>
     </div>
   </div>
 </template>

@@ -127,5 +127,3 @@ export const operationsApi = {
   consumptions: createResource<Record<string, unknown>>(endpoints.consumptions, 'Konsumsi'),
   packages: packagesApi,
 }
-
-

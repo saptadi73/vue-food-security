@@ -116,8 +116,9 @@ defineExpose({ start, stop })
 
 <template>
   <div class="flex flex-col gap-4">
+    <!-- Area kamera selalu gelap, jadi token warna dipaksa memakai skala dark. -->
     <div
-      class="relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-950 ring-1 ring-surface-800 sm:aspect-video"
+      class="dark relative aspect-square w-full overflow-hidden rounded-2xl bg-surface-950 ring-1 ring-surface-800 sm:aspect-video"
     >
       <video ref="videoEl" class="size-full object-cover" playsinline muted />
 

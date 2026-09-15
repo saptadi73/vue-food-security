@@ -120,6 +120,18 @@
 }
 
 @layer base {
+  /*
+   * surface-400 adalah warna teks muted. Nilai @theme dioptimalkan untuk latar gelap
+   * (6.9:1) tetapi hanya 2.7:1 di atas putih, jadi light mode memakai nilai lebih gelap.
+   */
+  :root {
+    --color-surface-400: oklch(0.55 0.018 250);
+  }
+
+  .dark {
+    --color-surface-400: oklch(0.7 0.015 250);
+  }
+
   * {
     border-color: var(--color-surface-200);
   }
