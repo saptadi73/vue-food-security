@@ -37,3 +37,8 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Environment files may contain credentials. Keep only the sanitized template.
+.env
+.env.*
+!.env.example
