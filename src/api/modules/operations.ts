@@ -80,6 +80,86 @@ export interface AllocationData {
   holding_policy: HoldingPolicy | null
 }
 
+export interface RawMaterialBatchData extends AuditFields {
+  raw_material_batch_id: Uuid
+  raw_material_id: Uuid
+  receiving_id: Uuid
+  supplier_id: Uuid
+  batch_code: string
+  expired_date: string | null
+  status: 'CREATED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED'
+  qr_code: string | null
+}
+
+export type DeliveryStatus = 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED'
+
+export interface DeliveryData extends AuditFields {
+  delivery_id: Uuid
+  kitchen_id: Uuid | null
+  vehicle: Uuid
+  driver: Uuid
+  status: DeliveryStatus
+  departure_time: string | null
+  estimated_arrival_time: string | null
+  estimated_distance_km: DecimalString | null
+  estimated_duration_minutes: number | null
+  arrival_time: string | null
+}
+
+export interface DeliveryPackageItem {
+  delivery_item_id: Uuid
+  delivery_id: Uuid
+  package_id: Uuid
+  school_id: Uuid
+  package: PackageData
+}
+
+export interface DeliveryDetail extends DeliveryData {
+  items: DeliveryPackageItem[]
+}
+
+export interface DeliveryTracking {
+  delivery_id: Uuid
+  vehicle: Uuid
+  status: DeliveryStatus
+  destination_count: number
+  latest_gps: {
+    gps_log_id: Uuid
+    recorded_at: string
+    latitude: DecimalString
+    longitude: DecimalString
+    speed: DecimalString | null
+    heading: DecimalString | null
+  } | null
+  latest_temperature: {
+    temperature_log_id: Uuid
+    device_uuid: Uuid
+    recorded_at: string
+    temperature: DecimalString
+    unit: string
+  } | null
+  remaining_distance_km: DecimalString | null
+  remaining_duration_minutes: number | null
+  estimated_arrival_time: string | null
+  calculated_at: string
+}
+
+export interface DeliveryVehicleSummary extends AuditFields {
+  vehicle: Uuid
+  delivery_count: number
+  package_count: number
+  total_quantity: DecimalString
+  uom: string | null
+}
+
+export interface DeliveryDestinationSummary extends AuditFields {
+  school_id: Uuid
+  delivery_count: number
+  package_count: number
+  total_quantity: DecimalString
+  uom: string | null
+}
+
 /** Prefix payload QR paket sesuai kontrak backend. */
 export const PACKAGE_QR_PREFIX = 'fsos:package:'
 
@@ -111,7 +191,7 @@ export const packagesApi = {
 
 export const operationsApi = {
   receivings: createResource<Record<string, unknown>>(endpoints.receivings, 'Penerimaan bahan'),
-  rawMaterialBatches: createResource<Record<string, unknown>>(
+  rawMaterialBatches: createResource<RawMaterialBatchData>(
     endpoints.rawMaterialBatches,
     'Batch bahan',
   ),
@@ -119,7 +199,16 @@ export const operationsApi = {
     endpoints.productionBatches,
     'Batch produksi',
   ),
-  deliveries: createResource<Record<string, unknown>>(endpoints.deliveries, 'Pengiriman'),
+  deliveries: {
+    list: (query: PageQuery & { vehicle?: Uuid; status?: DeliveryStatus } = {}) =>
+      api.get<OffsetPage<DeliveryData>>(endpoints.deliveries.list(query)),
+    detail: (id: string) => api.get<DeliveryDetail>(endpoints.deliveries.detail(id)),
+    tracking: (id: string) => api.get<DeliveryTracking>(endpoints.deliveries.tracking(id)),
+    byVehicle: (query: PageQuery & { vehicle?: Uuid; status?: DeliveryStatus } = {}) =>
+      api.get<OffsetPage<DeliveryVehicleSummary>>(endpoints.deliveries.byVehicle(query)),
+    byDestination: (query: PageQuery & { school_id?: Uuid; status?: DeliveryStatus } = {}) =>
+      api.get<OffsetPage<DeliveryDestinationSummary>>(endpoints.deliveries.byDestination(query)),
+  },
   schoolReceivings: createResource<Record<string, unknown>>(
     endpoints.schoolReceivings,
     'Penerimaan sekolah',

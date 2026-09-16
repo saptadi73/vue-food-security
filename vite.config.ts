@@ -24,6 +24,9 @@ export default defineConfig(({ mode }) => {
       proxy: useProxy ? { '/api': { target: backendOrigin, changeOrigin: true } } : undefined,
     },
     build: {
+      // ApexCharts sendiri berukuran besar (~1.5 MB) sebagai vendor chunk.
+      // Ia sudah lazy-loaded sehingga tidak masuk bundle awal aplikasi.
+      chunkSizeWarningLimit: 1600,
       rollupOptions: {
         output: {
           manualChunks(id: string) {

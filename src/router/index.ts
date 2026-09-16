@@ -43,7 +43,7 @@ const router = createRouter({
         {
           path: 'scan',
           name: 'scan',
-          component: () => import('@/views/ScanView.vue'),
+          redirect: '/scan/traceability',
           meta: { title: 'Pindai QR' },
         },
         {
@@ -51,6 +51,52 @@ const router = createRouter({
           name: 'packages',
           component: () => import('@/views/PackagesView.vue'),
           meta: { title: 'Paket & QR' },
+        },
+        {
+          path: 'raw-material-batches',
+          name: 'raw-material-batches',
+          component: () => import('@/views/RawMaterialBatchesView.vue'),
+          meta: { title: 'Penerimaan Bahan' },
+        },
+        {
+          path: 'scan/material',
+          name: 'scan-material',
+          component: () => import('@/views/ContextScanView.vue'),
+          props: { mode: 'material' },
+          meta: { title: 'Pindai Bahan Storage' },
+        },
+        {
+          path: 'scan/loading',
+          name: 'scan-loading',
+          component: () => import('@/views/ContextScanView.vue'),
+          props: { mode: 'loading' },
+          meta: { title: 'Pindai Loading Delivery' },
+        },
+        {
+          path: 'scan/school-receiving',
+          name: 'scan-school-receiving',
+          component: () => import('@/views/ContextScanView.vue'),
+          props: { mode: 'school-receiving' },
+          meta: { title: 'Pindai Penerimaan Sekolah' },
+        },
+        {
+          path: 'scan/traceability',
+          name: 'scan-traceability',
+          component: () => import('@/views/ContextScanView.vue'),
+          props: { mode: 'traceability' },
+          meta: { title: 'Cek Kemasan & Traceability' },
+        },
+        {
+          path: 'deliveries',
+          name: 'deliveries',
+          component: () => import('@/views/DeliveriesView.vue'),
+          meta: { title: 'Pengiriman Aktif' },
+        },
+        {
+          path: 'deliveries/tracking',
+          name: 'delivery-tracking',
+          component: () => import('@/views/DeliveryTrackingView.vue'),
+          meta: { title: 'Live Tracking Delivery' },
         },
         {
           path: 'traceability',

@@ -12,6 +12,7 @@ export const env = {
   useProxy,
   requestTimeoutMs: Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 20000),
   defaultTenant: import.meta.env.VITE_DEFAULT_TENANT ?? '',
+  googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '',
   isDev: import.meta.env.DEV,
 } as const
 

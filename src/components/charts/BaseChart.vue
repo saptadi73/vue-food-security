@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import VueApexCharts from 'vue3-apexcharts'
+import { computed, defineAsyncComponent } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { chartTheme, type ChartKind } from './chartTheme'
+
+// ApexCharts hanya dimuat ketika halaman yang memiliki grafik benar-benar dibuka.
+const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'))
 
 const props = withDefaults(
   defineProps<{

@@ -14,6 +14,7 @@ import QrCodeView from '@/components/qr/QrCodeView.vue'
 import PackageSummary from '@/components/domain/PackageSummary.vue'
 import { fsos, isApiError } from '@/api'
 import type { AllocationData, PackageData } from '@/api/modules/operations'
+import type { OffsetPage } from '@/api/types'
 import { usePaginatedList } from '@/composables/usePaginatedList'
 import { useReferenceOptions } from '@/composables/useReferenceOptions'
 import { useConfirm } from '@/composables/useConfirm'
@@ -26,6 +27,8 @@ const confirm = useConfirm()
 const references = useReferenceOptions()
 
 const batchId = ref('')
+const productionOptions = ref<SelectOption[]>([])
+const productionLoading = ref(false)
 const qrTarget = ref<PackageData | null>(null)
 const detailTarget = ref<PackageData | null>(null)
 const createOpen = ref(false)
@@ -55,11 +58,17 @@ const columns: TableColumn<PackageData>[] = [
 ]
 
 const list = usePaginatedList<PackageData>(
-  (query) =>
-    fsos.packages.list({
-      ...query,
-      production_batch_id: batchId.value.trim() || undefined,
-    }),
+  (query) => {
+    if (!batchId.value) {
+      return Promise.resolve<OffsetPage<PackageData>>({
+        items: [],
+        offset: Number(query.offset ?? 0),
+        limit: Number(query.limit ?? 20),
+        next_offset: null,
+      })
+    }
+    return fsos.packages.list({ ...query, production_batch_id: batchId.value })
+  },
   {
     searchFields: (row) => [row.package_code, row.package_id, String(row.package_number)],
     immediate: false,
@@ -67,6 +76,31 @@ const list = usePaginatedList<PackageData>(
 )
 
 const canCreate = computed(() => Boolean(batchId.value.trim() && allocation.value))
+
+async function loadProductionOptions() {
+  productionLoading.value = true
+  try {
+    const page = await fsos.operations.productionBatches.list({
+      status: 'COMPLETED',
+      offset: 0,
+      limit: 100,
+    })
+    const rows = page.items as Record<string, unknown>[]
+    productionOptions.value = rows.map((row) => {
+      const batchCode = String(row.batch_code ?? 'Tanpa kode')
+      const finishedAt = row.finished_at ? formatDateTime(String(row.finished_at)) : '—'
+      const actualQuantity = row.actual_quantity ? ` · hasil ${row.actual_quantity}` : ''
+      return {
+        value: String(row.production_batch_id ?? ''),
+        label: `${batchCode} · selesai ${finishedAt}${actualQuantity}`,
+      }
+    })
+  } catch (error) {
+    toast.fromError(error, 'Gagal memuat daftar produksi')
+  } finally {
+    productionLoading.value = false
+  }
+}
 
 async function loadAllocation() {
   const id = batchId.value.trim()
@@ -225,6 +259,7 @@ watch(
 
 onMounted(() => {
   if (typeof route.query.batch === 'string') batchId.value = route.query.batch
+  void loadProductionOptions()
   applyFilter()
 })
 </script>
@@ -233,7 +268,7 @@ onMounted(() => {
   <div>
     <PageHeader
       title="Paket & QR"
-      description="Alokasi paket per batch produksi dan pembuatan QR label. Backend belum menyediakan endpoint gambar/label QR; rendering dilakukan di klien."
+      description="Pilih produksi yang sudah selesai, alokasikan paket, lalu buat dan cetak label QR."
       icon="lucide:package"
       tag="Package.Write"
     >
@@ -245,20 +280,26 @@ onMounted(() => {
       </template>
     </PageHeader>
 
-    <!-- Filter batch produksi + ringkasan alokasi -->
-    <AppCard class="mb-4" title="Batch produksi" icon="lucide:factory">
+    <!-- Pilih produksi + ringkasan alokasi -->
+    <AppCard class="mb-4" title="Pilih produksi" icon="lucide:factory">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <AppInput
+        <AppSelect
           v-model="batchId"
           class="flex-1"
-          label="Production batch ID"
-          icon="lucide:hash"
-          placeholder="UUID batch produksi"
-          hint="Kosongkan untuk melihat seluruh paket tenant."
-          @keydown.enter="applyFilter"
+          label="Produksi selesai"
+          :options="productionOptions"
+          :disabled="productionLoading"
+          placeholder="Pilih batch produksi"
+          hint="Daftar hanya menampilkan produksi berstatus COMPLETED."
+          @update:model-value="applyFilter"
         />
-        <AppButton icon="lucide:filter" :loading="allocationLoading" @click="applyFilter">
-          Terapkan
+        <AppButton
+          icon="lucide:qr-code"
+          :disabled="!batchId"
+          :loading="allocationLoading"
+          @click="applyFilter"
+        >
+          Buat QR
         </AppButton>
       </div>
 
@@ -379,6 +420,7 @@ onMounted(() => {
             type="button"
             class="grid size-8 place-items-center rounded-lg text-surface-400 transition hover:bg-surface-100 hover:text-brand-600 dark:hover:bg-surface-800"
             aria-label="Tampilkan QR"
+            title="Buat dan cetak QR"
             @click="qrTarget = row"
           >
             <Icon icon="lucide:qr-code" :width="15" :height="15" />

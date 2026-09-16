@@ -97,7 +97,12 @@ export const endpoints = {
     holdingUpdate: (id: string) => `/packages/${id}/holding/update`,
     holdingFinish: (id: string) => `/packages/${id}/holding/finish`,
   },
-  deliveries: collection('/deliveries'),
+  deliveries: {
+    ...collection('/deliveries'),
+    byVehicle: (p?: QueryParams) => `/deliveries/packages/by-vehicle${q(p)}`,
+    byDestination: (p?: QueryParams) => `/deliveries/packages/by-destination${q(p)}`,
+    tracking: (id: string) => `/deliveries/${id}/tracking`,
+  },
   schoolReceivings: collection('/school-receivings'),
   consumptions: collection('/consumptions'),
 
