@@ -13,8 +13,9 @@ export type PackageStatus =
   | 'RECEIVED'
   | 'CONSUMED'
   | 'DISCARDED'
+  | 'REJECTED'
 
-export type TimerStatus = 'SAFE' | 'WARNING' | 'CRITICAL' | 'EXPIRED' | 'UNKNOWN'
+export type TimerStatus = 'SAFE' | 'WARNING' | 'CRITICAL' | 'EXPIRED' | 'DISCARD_RECOMMENDED' | 'UNKNOWN'
 
 export interface HoldingPolicy {
   schema_version: number
@@ -62,6 +63,19 @@ export interface PackageInput {
   initial_temperature?: DecimalString | null
 }
 
+export interface PackageDeliveryContextData {
+  package_id: Uuid
+  package_version: number
+  package_status: PackageStatus
+  delivery_item_id: Uuid | null
+  delivery_id: Uuid | null
+  delivery_status: DeliveryStatus | null
+  school: Uuid | null
+  departure_time: string | null
+  arrival_time: string | null
+  estimated_arrival_time: string | null
+}
+
 export interface HoldingActionInput {
   expected_version: number
 }
@@ -80,6 +94,110 @@ export interface AllocationData {
   holding_policy: HoldingPolicy | null
 }
 
+export interface ProductionBatchData extends AuditFields {
+  production_batch_id: Uuid
+  batch_code: string
+  kitchen: Uuid
+  menu: Uuid
+  planned_quantity: DecimalString | null
+  actual_quantity: DecimalString | null
+  initial_temperature: DecimalString | null
+  recipe_snapshot: Record<string, unknown> | null
+  status: 'CREATED' | 'RUNNING' | 'COMPLETED' | 'CANCELLED'
+  started_at: string | null
+  finished_at: string | null
+  holding_started_at: string | null
+  holding_expired_at: string | null
+}
+
+export interface ProductionItemData extends AuditFields {
+  production_item_id: Uuid
+  production_batch_id: Uuid
+  raw_material_batch_id: Uuid
+  storage_id: Uuid | null
+  batch_version: number | null
+  quantity: DecimalString
+  uom: string
+}
+
+export interface ProductionBatchDetail extends ProductionBatchData {
+  items: ProductionItemData[]
+}
+
+export interface ProductionInput {
+  batch_code: string
+  kitchen: Uuid
+  menu: Uuid
+  planned_quantity: DecimalString
+}
+
+export interface ProductionStartItemInput {
+  raw_material_batch_id: Uuid
+  storage_id: Uuid
+  expected_version: number
+  quantity: DecimalString
+}
+
+export interface ProductionStartInput {
+  expected_version: number
+  items: ProductionStartItemInput[]
+}
+
+export interface ProductionCompleteInput {
+  expected_version: number
+  actual_quantity: DecimalString
+  initial_temperature?: DecimalString | null
+}
+
+export interface ReceivingItemInput {
+  raw_material_id: Uuid
+  batch_code: string
+  quantity: DecimalString
+  temperature?: DecimalString | null
+  condition?: string | null
+  photo?: string | null
+  expired_date?: string | null
+  qr_code?: string | null
+}
+
+export interface ReceivingInput {
+  supplier_id: Uuid
+  kitchen_id: Uuid
+  received_at: string
+  items: ReceivingItemInput[]
+}
+
+export interface ReceivingData extends AuditFields {
+  receiving_id: Uuid
+  supplier_id: Uuid
+  kitchen_id: Uuid
+  operator: Uuid
+  received_at: string
+  status: 'CREATED' | 'COMPLETED' | 'CANCELLED'
+}
+
+export interface ReceivingItemData extends AuditFields {
+  receiving_item_id: Uuid
+  receiving_id: Uuid
+  raw_material_batch_id: Uuid
+  quantity: DecimalString
+  uom: string
+  temperature: DecimalString | null
+  condition: string | null
+  photo: string | null
+  accepted: boolean | null
+  batch: RawMaterialBatchData
+}
+
+export interface ReceivingDetail extends ReceivingData {
+  items: ReceivingItemData[]
+}
+
+export interface ReceivingCompleteInput {
+  expected_version: number
+  items: { receiving_item_id: Uuid; accepted: boolean }[]
+}
+
 export interface RawMaterialBatchData extends AuditFields {
   raw_material_batch_id: Uuid
   raw_material_id: Uuid
@@ -91,7 +209,27 @@ export interface RawMaterialBatchData extends AuditFields {
   qr_code: string | null
 }
 
+export interface RawMaterialStockStorageData {
+  storage_id: Uuid
+  quantity: DecimalString
+  issued_quantity: DecimalString
+  available_quantity: DecimalString
+}
+
+export interface RawMaterialStockBalanceData {
+  raw_material_batch_id: Uuid
+  version: number
+  uom: string
+  accepted_quantity: DecimalString
+  putaway_quantity: DecimalString
+  unallocated_quantity: DecimalString
+  issued_quantity: DecimalString
+  available_quantity: DecimalString
+  storages: RawMaterialStockStorageData[]
+}
+
 export type ReceivingStatus = 'CREATED' | 'COMPLETED' | 'CANCELLED'
+
 
 export interface ReceivingItemInput {
   raw_material_id: Uuid
@@ -164,6 +302,25 @@ export interface DeliveryDetail extends DeliveryData {
   items: DeliveryPackageItem[]
 }
 
+export interface DeliveryManifestItemInput {
+  package_id: Uuid
+  school_id: Uuid
+  expected_version: number
+}
+
+export interface DeliveryInput {
+  kitchen_id: Uuid
+  vehicle: Uuid
+  driver: Uuid
+  average_speed_kmph?: DecimalString | null
+  items: DeliveryManifestItemInput[]
+}
+
+export interface DeliveryDepartInput {
+  expected_version: number
+  estimated_arrival_time?: string | null
+}
+
 export interface DeliveryTracking {
   delivery_id: Uuid
   vehicle: Uuid
@@ -206,6 +363,61 @@ export interface DeliveryDestinationSummary extends AuditFields {
   uom: string | null
 }
 
+export type SchoolReceivingCondition = 'GOOD' | 'DAMAGED' | 'MISSING'
+
+export interface SchoolReceivingInput {
+  delivery_id: Uuid
+  package: Uuid
+  school: Uuid
+  expected_version: number
+  received_quantity: DecimalString
+  condition: SchoolReceivingCondition
+  accepted: boolean
+  temperature?: DecimalString | null
+  photo?: string | null
+  notes?: string | null
+}
+
+export interface SchoolReceivingData extends AuditFields {
+  school_receiving_id: Uuid
+  delivery_id: Uuid
+  package: Uuid
+  school: Uuid
+  received_time: string
+  expected_quantity: DecimalString | null
+  received_quantity: DecimalString | null
+  discrepancy_quantity: DecimalString | null
+  condition: SchoolReceivingCondition | null
+  accepted: boolean | null
+  temperature: DecimalString | null
+  photo: string | null
+  notes: string | null
+  uom: string | null
+  timer_status: TimerStatus | null
+}
+
+export interface ConsumptionInput {
+  package_id: Uuid
+  expected_version: number
+  consumed_quantity: DecimalString
+  discarded_quantity: DecimalString
+  notes?: string | null
+}
+
+export interface ConsumptionData extends AuditFields {
+  consumption_id: Uuid
+  package_id: Uuid
+  school_receiving_id: Uuid | null
+  consumed_at: string
+  consumed_quantity: DecimalString | null
+  discarded_quantity: DecimalString | null
+  remaining_minutes: number | null
+  safe: boolean | null
+  notes: string | null
+  uom: string | null
+  timer_status: TimerStatus | null
+}
+
 /** Prefix payload QR paket sesuai kontrak backend. */
 export const PACKAGE_QR_PREFIX = 'fsos:package:'
 
@@ -225,6 +437,7 @@ export const packagesApi = {
   create: (input: PackageInput) => api.post<PackageData>(endpoints.packages.create(), input),
   /** Resolve hasil scan QR menjadi paket. Payload bukan token akses; bearer tetap wajib. */
   resolve: (qrPayload: string) => api.get<PackageData>(endpoints.packages.resolve(qrPayload)),
+  deliveryContext: (id: string) => api.get<PackageDeliveryContextData>(endpoints.packages.deliveryContext(id)),
   startHolding: (id: string, input: HoldingActionInput) =>
     api.post<PackageData>(endpoints.packages.holdingStart(id), input),
   updateHolding: (id: string, input: HoldingActionInput) =>
@@ -251,6 +464,24 @@ export const receivingsApi = {
     }),
 }
 
+const productionResource = createResource<ProductionBatchDetail, ProductionInput>(
+  endpoints.productionBatches,
+  'Batch produksi',
+)
+
+export const productionBatchesApi = {
+  ...productionResource,
+  list: (query: PageQuery & { kitchen_id?: Uuid; menu_id?: Uuid; status?: ProductionBatchData['status'] } = {}) =>
+    api.get<OffsetPage<ProductionBatchData>>(endpoints.productionBatches.list(query)),
+  detail: (id: string) => api.get<ProductionBatchDetail>(endpoints.productionBatches.detail(id)),
+  start: (id: string, input: ProductionStartInput) =>
+    api.post<ProductionBatchDetail>(endpoints.productionBatches.start(id), input),
+  complete: (id: string, input: ProductionCompleteInput) =>
+    api.post<ProductionBatchDetail>(endpoints.productionBatches.complete(id), input),
+  cancel: (id: string, expectedVersion: number) =>
+    api.post<ProductionBatchDetail>(endpoints.productionBatches.cancel(id), { expected_version: expectedVersion }),
+}
+
 export const operationsApi = {
   receivings: receivingsApi,
   rawMaterialBatches: {
@@ -265,25 +496,49 @@ export const operationsApi = {
     } = {}) => api.get<OffsetPage<RawMaterialBatchData>>(endpoints.rawMaterialBatches.list(query)),
     detail: (id: string) =>
       api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.detail(id)),
+    stock: (id: string) => api.get<RawMaterialStockBalanceData>(endpoints.rawMaterialBatches.stock(id)),
   },
-  productionBatches: createResource<Record<string, unknown>>(
-    endpoints.productionBatches,
-    'Batch produksi',
-  ),
+  productionBatches: productionBatchesApi,
   deliveries: {
-    list: (query: PageQuery & { vehicle?: Uuid; status?: DeliveryStatus } = {}) =>
+    list: (query: PageQuery & { kitchen_id?: Uuid; vehicle?: Uuid; driver?: Uuid; status?: DeliveryStatus } = {}) =>
       api.get<OffsetPage<DeliveryData>>(endpoints.deliveries.list(query)),
     detail: (id: string) => api.get<DeliveryDetail>(endpoints.deliveries.detail(id)),
+    create: (input: DeliveryInput) => api.post<DeliveryDetail>(endpoints.deliveries.create(), input),
     tracking: (id: string) => api.get<DeliveryTracking>(endpoints.deliveries.tracking(id)),
+    depart: (id: string, input: DeliveryDepartInput) =>
+      api.post<DeliveryDetail>(endpoints.deliveries.depart(id), input),
+    complete: (id: string, expectedVersion: number) =>
+      api.post<DeliveryDetail>(endpoints.deliveries.complete(id), { expected_version: expectedVersion }),
+    cancel: (id: string, expectedVersion: number) =>
+      api.post<DeliveryDetail>(endpoints.deliveries.cancel(id), { expected_version: expectedVersion }),
     byVehicle: (query: PageQuery & { vehicle?: Uuid; status?: DeliveryStatus } = {}) =>
       api.get<OffsetPage<DeliveryVehicleSummary>>(endpoints.deliveries.byVehicle(query)),
     byDestination: (query: PageQuery & { school_id?: Uuid; status?: DeliveryStatus } = {}) =>
       api.get<OffsetPage<DeliveryDestinationSummary>>(endpoints.deliveries.byDestination(query)),
   },
-  schoolReceivings: createResource<Record<string, unknown>>(
-    endpoints.schoolReceivings,
-    'Penerimaan sekolah',
-  ),
-  consumptions: createResource<Record<string, unknown>>(endpoints.consumptions, 'Konsumsi'),
+  schoolReceivings: {
+    list: (query: PageQuery & { package_id?: Uuid; school?: Uuid; delivery_id?: Uuid } = {}) =>
+      api.get<OffsetPage<SchoolReceivingData>>(endpoints.schoolReceivings.list(query)),
+    detail: (id: string) => api.get<SchoolReceivingData>(endpoints.schoolReceivings.detail(id)),
+    create: (input: SchoolReceivingInput) =>
+      api.post<SchoolReceivingData>(endpoints.schoolReceivings.create(), input),
+  },
+  consumptions: {
+    list: (query: PageQuery & { package_id?: Uuid } = {}) =>
+      api.get<OffsetPage<ConsumptionData>>(endpoints.consumptions.list(query)),
+    detail: (id: string) => api.get<ConsumptionData>(endpoints.consumptions.detail(id)),
+    create: (input: ConsumptionInput) =>
+      api.post<ConsumptionData>(endpoints.consumptions.create(), input),
+  },
   packages: packagesApi,
 }
+
+
+
+
+
+
+
+
+
+

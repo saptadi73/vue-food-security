@@ -1,4 +1,4 @@
-export interface NavItem {
+﻿export interface NavItem {
   label: string
   to: string
   icon: string
@@ -73,6 +73,12 @@ export const navigation: NavSection[] = [
         description: 'QR batch bahan makanan yang diterima',
       },
       {
+        label: 'Batch Produksi',
+        to: '/production-batches',
+        icon: 'lucide:chef-hat',
+        description: 'Rencana produksi, cooking, suhu inti dan waktu selesai masak',
+      },
+      {
         label: 'Jejak Asset',
         to: '/traceability',
         icon: 'lucide:git-branch',
@@ -130,7 +136,7 @@ export const navigation: NavSection[] = [
   },
 ]
 
-/** Menu bawah khusus mobile — aksi paling sering dipakai di lapangan. */
+/** Menu bawah khusus mobile â€” aksi paling sering dipakai di lapangan. */
 export const mobileQuickNav: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: 'lucide:layout-dashboard' },
   { label: 'Paket', to: '/packages', icon: 'lucide:package' },
@@ -138,3 +144,5 @@ export const mobileQuickNav: NavItem[] = [
   { label: 'Jejak', to: '/traceability', icon: 'lucide:git-branch' },
   { label: 'Alarm', to: '/monitoring/alarms', icon: 'lucide:siren' },
 ]
+
+

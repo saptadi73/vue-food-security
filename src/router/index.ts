@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+﻿import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -57,6 +57,12 @@ const router = createRouter({
           name: 'raw-material-batches',
           component: () => import('@/views/RawMaterialBatchesView.vue'),
           meta: { title: 'Penerimaan Bahan' },
+        },
+        {
+          path: 'production-batches',
+          name: 'production-batches',
+          component: () => import('@/views/ProductionBatchesView.vue'),
+          meta: { title: 'Batch Produksi' },
         },
         {
           path: 'scan/material',
@@ -177,7 +183,9 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const title = (to.meta.title as string) ?? ''
-  document.title = title ? `${title} · FSOS` : 'FSOS · Food Security & Traceability'
+  document.title = title ? `${title} Â· FSOS` : 'FSOS Â· Food Security & Traceability'
 })
 
 export default router
+
+

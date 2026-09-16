@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
@@ -12,6 +12,7 @@ const TIMER_TONE = {
   WARNING: { tone: 'warning', icon: 'lucide:triangle-alert', bar: 'bg-amber-500' },
   CRITICAL: { tone: 'danger', icon: 'lucide:flame', bar: 'bg-rose-500' },
   EXPIRED: { tone: 'danger', icon: 'lucide:clock-alert', bar: 'bg-rose-600' },
+  DISCARD_RECOMMENDED: { tone: 'danger', icon: 'lucide:octagon-alert', bar: 'bg-rose-700' },
   UNKNOWN: { tone: 'muted', icon: 'lucide:circle-help', bar: 'bg-surface-400' },
 } as const
 
@@ -47,11 +48,11 @@ const detailRows = computed<DetailRow[]>(() => [
   },
   {
     label: 'Suhu awal',
-    value: props.item.initial_temperature ? `${props.item.initial_temperature} °C` : '—',
+    value: props.item.initial_temperature ? `${props.item.initial_temperature} Â°C` : 'â€”',
   },
   { label: 'Mulai holding', value: formatDateTime(props.item.holding_started_at) },
   { label: 'Selesai holding', value: formatDateTime(props.item.holding_finished_at) },
-  { label: 'Kategori', value: props.item.holding_policy?.food_category ?? '—' },
+  { label: 'Kategori', value: props.item.holding_policy?.food_category ?? 'â€”' },
 ])
 </script>
 
@@ -63,7 +64,7 @@ const detailRows = computed<DetailRow[]>(() => [
           {{ item.package_code }}
         </p>
         <p class="text-xs text-surface-500 dark:text-surface-400">
-          Paket #{{ item.package_number }} · {{ formatDecimal(item.quantity) }} {{ item.uom ?? '' }}
+          Paket #{{ item.package_number }} Â· {{ formatDecimal(item.quantity) }} {{ item.uom ?? '' }}
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-1.5">
@@ -103,7 +104,7 @@ const detailRows = computed<DetailRow[]>(() => [
       </div>
 
       <p class="mt-2 text-[11px] text-surface-500 dark:text-surface-400">
-        Kedaluwarsa {{ formatDateTime(item.expired_at) }} · dihitung
+        Kedaluwarsa {{ formatDateTime(item.expired_at) }} Â· dihitung
         {{ formatDateTime(item.calculated_at) }}
       </p>
     </div>
@@ -129,7 +130,7 @@ const detailRows = computed<DetailRow[]>(() => [
       v-if="item.holding_policy"
       class="rounded-xl bg-surface-50 px-3.5 py-3 text-[11px] text-surface-500 dark:bg-surface-850 dark:text-surface-400"
     >
-      Policy dibekukan saat alokasi pertama — warning
+      Policy dibekukan saat alokasi pertama â€” warning
       {{ item.holding_policy.warning_minutes }}m, maksimum
       {{ item.holding_policy.maximum_minutes }}m, discard
       {{ item.holding_policy.discard_minutes }}m. Perubahan rule berikutnya tidak memperpanjang
@@ -137,3 +138,4 @@ const detailRows = computed<DetailRow[]>(() => [
     </div>
   </div>
 </template>
+

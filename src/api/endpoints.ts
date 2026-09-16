@@ -91,14 +91,21 @@ export const endpoints = {
     complete: (id: string) => `/receivings/${id}/complete`,
     cancel: (id: string) => `/receivings/${id}/cancel`,
   },
-  rawMaterialBatches: collection('/raw-material-batches'),
+  rawMaterialBatches: {
+    ...collection('/raw-material-batches'),
+    stock: (id: string) => `/raw-material-batches/${id}/stock`,
+  },
   productionBatches: {
     ...collection('/production-batches'),
+    start: (id: string) => `/production-batches/${id}/start`,
+    complete: (id: string) => `/production-batches/${id}/complete`,
+    cancel: (id: string) => `/production-batches/${id}/cancel`,
     packaging: (id: string) => `/production-batches/${id}/packaging`,
   },
   packages: {
     ...collection('/packages'),
     resolve: (qrPayload: string) => `/packages/resolve${q({ qr_payload: qrPayload })}`,
+    deliveryContext: (id: string) => `/packages/${id}/delivery-context`,
     holdingStart: (id: string) => `/packages/${id}/holding/start`,
     holdingUpdate: (id: string) => `/packages/${id}/holding/update`,
     holdingFinish: (id: string) => `/packages/${id}/holding/finish`,
@@ -108,6 +115,9 @@ export const endpoints = {
     byVehicle: (p?: QueryParams) => `/deliveries/packages/by-vehicle${q(p)}`,
     byDestination: (p?: QueryParams) => `/deliveries/packages/by-destination${q(p)}`,
     tracking: (id: string) => `/deliveries/${id}/tracking`,
+    depart: (id: string) => `/deliveries/${id}/depart`,
+    complete: (id: string) => `/deliveries/${id}/complete`,
+    cancel: (id: string) => `/deliveries/${id}/cancel`,
   },
   schoolReceivings: collection('/school-receivings'),
   consumptions: collection('/consumptions'),
@@ -165,4 +175,11 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
+
+
+
+
+
+
+
 
