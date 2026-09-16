@@ -80,12 +80,19 @@ const canCreate = computed(() => Boolean(batchId.value.trim() && allocation.valu
 async function loadProductionOptions() {
   productionLoading.value = true
   try {
-    const page = await fsos.operations.productionBatches.list({
-      status: 'COMPLETED',
-      offset: 0,
-      limit: 100,
-    })
-    const rows = page.items as Record<string, unknown>[]
+    let rows: Record<string, unknown>[]
+    try {
+      const page = await fsos.operations.productionBatches.list({
+        status: 'COMPLETED',
+        offset: 0,
+        limit: 20,
+      })
+      rows = page.items as Record<string, unknown>[]
+    } catch {
+      // Kompatibilitas dengan backend lama yang belum menerima filter status.
+      const page = await fsos.operations.productionBatches.list({ offset: 0, limit: 20 })
+      rows = (page.items as Record<string, unknown>[]).filter((row) => row.status === 'COMPLETED')
+    }
     productionOptions.value = rows.map((row) => {
       const batchCode = String(row.batch_code ?? 'Tanpa kode')
       const finishedAt = row.finished_at ? formatDateTime(String(row.finished_at)) : '—'

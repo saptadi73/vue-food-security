@@ -29,7 +29,8 @@ export function useReferenceOptions() {
 
     loading.value = true
     try {
-      const page = await mastersApi[master].list({ offset: 0, limit: MAX_PAGE_LIMIT })
+      // Opsi dropdown cukup satu halaman kecil; hindari request besar pada backend lama.
+      const page = await mastersApi[master].list({ offset: 0, limit: Math.min(MAX_PAGE_LIMIT, 20) })
       const rows = (page.items ?? []) as unknown as Record<string, unknown>[]
       const mapped = rows
         .filter((row) => (filterActive && 'status' in row ? row.status === 'ACTIVE' : true))

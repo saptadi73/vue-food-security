@@ -64,7 +64,7 @@ async function resolve(value: string) {
       const page = await fsos.operations.rawMaterialBatches.list({
         search: payload,
         offset: 0,
-        limit: 100,
+        limit: 20,
       })
       materialResult.value =
         page.items.find((item) => item.qr_code === payload || item.batch_code === payload) ?? null
