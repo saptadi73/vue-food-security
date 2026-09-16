@@ -23,6 +23,7 @@ export type QueryParams = object | undefined
 export const endpoints = {
   system: {
     health: () => '/health',
+    databaseHealth: () => '/health/database',
     ready: () => '/ready',
   },
 
@@ -153,3 +154,4 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
+
