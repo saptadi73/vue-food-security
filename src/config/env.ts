@@ -1,6 +1,8 @@
 const rawOrigin = (import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:8000').replace(/\/+$/, '')
 const rawPrefix = (import.meta.env.VITE_API_PREFIX ?? '/api/v1').replace(/\/+$/, '')
-const useProxy = import.meta.env.VITE_USE_PROXY === 'true'
+const useProxy = import.meta.env.VITE_USE_PROXY
+  ? import.meta.env.VITE_USE_PROXY === 'true'
+  : import.meta.env.DEV
 
 export const env = {
   appName: 'FSOS',

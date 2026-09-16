@@ -136,7 +136,7 @@ export const navigation: NavSection[] = [
   },
 ]
 
-/** Menu bawah khusus mobile â€” aksi paling sering dipakai di lapangan. */
+/** Menu bawah khusus mobile - aksi paling sering dipakai di lapangan. */
 export const mobileQuickNav: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: 'lucide:layout-dashboard' },
   { label: 'Paket', to: '/packages', icon: 'lucide:package' },

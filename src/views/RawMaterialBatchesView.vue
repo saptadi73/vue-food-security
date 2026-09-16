@@ -13,11 +13,13 @@ import { fsos, isApiError } from '@/api'
 import type { RawMaterialBatchData } from '@/api/modules/operations'
 import { usePaginatedList } from '@/composables/usePaginatedList'
 import { useReferenceOptions } from '@/composables/useReferenceOptions'
+import { useConfirm } from '@/composables/useConfirm'
 import { useToastStore } from '@/stores/toast'
 import { formatDateTime, shortId } from '@/utils/format'
 
 const toast = useToastStore()
 const references = useReferenceOptions()
+const confirm = useConfirm()
 
 type BatchStatusFilter = 'ACCEPTED' | 'CREATED' | 'REJECTED' | 'CANCELLED' | null
 
@@ -25,6 +27,7 @@ const status = ref<BatchStatusFilter>('ACCEPTED')
 const qrTarget = ref<RawMaterialBatchData | null>(null)
 const createOpen = ref(false)
 const saving = ref(false)
+const recoveringId = ref<string | null>(null)
 const supplierOptions = ref<SelectOption[]>([])
 const kitchenOptions = ref<SelectOption[]>([])
 const materialOptions = ref<SelectOption[]>([])
@@ -164,6 +167,59 @@ async function submitCreate() {
     saving.value = false
   }
 }
+
+async function completeDraft(row: RawMaterialBatchData) {
+  if (recoveringId.value) return
+  const ok = await confirm.caution({
+    title: 'Terima draft penerimaan',
+    message: 'Seluruh item pada transaksi penerimaan ini akan diselesaikan sebagai diterima.',
+    details: [{ label: 'Receiving', value: row.receiving_id }],
+    confirmLabel: 'Terima bahan',
+  })
+  if (!ok) return
+
+  recoveringId.value = row.receiving_id
+  try {
+    const receiving = await fsos.operations.receivings.detail(row.receiving_id)
+    await fsos.operations.receivings.complete(receiving.receiving_id, {
+      expected_version: receiving.version,
+      items: receiving.items.map((item) => ({
+        receiving_item_id: item.receiving_item_id,
+        accepted: true,
+      })),
+    })
+    toast.success('Draft penerimaan diselesaikan')
+    await list.refresh()
+  } catch (error) {
+    toast.fromError(error, 'Gagal menyelesaikan draft penerimaan')
+  } finally {
+    recoveringId.value = null
+  }
+}
+
+async function cancelDraft(row: RawMaterialBatchData) {
+  if (recoveringId.value) return
+  const ok = await confirm.destructive({
+    title: 'Batalkan draft penerimaan',
+    message: 'Seluruh batch dalam transaksi draft ini akan dibatalkan.',
+    details: [{ label: 'Receiving', value: row.receiving_id }],
+    confirmationPhrase: shortId(row.receiving_id),
+    confirmLabel: 'Batalkan draft',
+  })
+  if (!ok) return
+
+  recoveringId.value = row.receiving_id
+  try {
+    const receiving = await fsos.operations.receivings.detail(row.receiving_id)
+    await fsos.operations.receivings.cancel(receiving.receiving_id, receiving.version)
+    toast.success('Draft penerimaan dibatalkan')
+    await list.refresh()
+  } catch (error) {
+    toast.fromError(error, 'Gagal membatalkan draft penerimaan')
+  } finally {
+    recoveringId.value = null
+  }
+}
 </script>
 
 <template>
@@ -233,6 +289,27 @@ async function submitCreate() {
         <AppButton v-else size="sm" variant="outline" icon="lucide:qr-code" @click="qrTarget = row">
           Buat QR
         </AppButton>
+      </template>
+      <template #actions="{ row }">
+        <div v-if="row.status === 'CREATED'" class="flex flex-wrap justify-end gap-1.5">
+          <AppButton
+            size="xs"
+            icon="lucide:check"
+            :loading="recoveringId === row.receiving_id"
+            @click="completeDraft(row)"
+          >
+            Terima
+          </AppButton>
+          <AppButton
+            size="xs"
+            variant="ghost"
+            icon="lucide:x"
+            :disabled="recoveringId !== null"
+            @click="cancelDraft(row)"
+          >
+            Batalkan
+          </AppButton>
+        </div>
       </template>
     </DataTable>
 

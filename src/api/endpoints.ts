@@ -1,5 +1,5 @@
 ﻿/**
- * Registry path API â€” satu sumber kebenaran untuk seluruh pemanggilan HTTP.
+ * Registry path API - satu sumber kebenaran untuk seluruh pemanggilan HTTP.
  *
  * Aturan: tidak ada string path yang ditulis langsung di store/komponen.
  * Semua path dibangun dari sini agar penelusuran endpoint (dan audit kontrak

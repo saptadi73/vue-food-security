@@ -212,7 +212,7 @@ async function submitCreate() {
     details: [
       { label: 'Batch', value: current.production_batch_id },
       { label: 'expected_version', value: String(current.version) },
-      { label: 'Sisa belum dialokasi', value: String(current.unallocated_quantity ?? 'â€”') },
+      { label: 'Sisa belum dialokasi', value: String(current.unallocated_quantity ?? '—') },
       { label: 'Jumlah paket', value: form.value.quantity },
     ],
     confirmLabel: 'Alokasikan',
@@ -343,7 +343,7 @@ onMounted(() => {
       :error="list.error.value"
       searchable
       selectable
-      search-placeholder="Cari kode paketâ€¦"
+      search-placeholder="Cari kode paket…"
       :empty="{
         icon: 'lucide:package',
         title: 'Belum ada paket',
@@ -456,7 +456,7 @@ onMounted(() => {
         <QrCodeView
           :value="qrTarget.qr_payload"
           :caption="qrTarget.package_code"
-          :subcaption="`Paket #${qrTarget.package_number} Â· ${shortId(qrTarget.package_id)}`"
+          :subcaption="`Paket #${qrTarget.package_number} · ${shortId(qrTarget.package_id)}`"
           :file-name="`qr-${qrTarget.package_code}`"
         />
       </div>
@@ -520,12 +520,12 @@ onMounted(() => {
           label="Jumlah"
           inputmode="decimal"
           required
-          :hint="`Maksimal ${allocation?.unallocated_quantity ?? 'â€”'} ${allocation?.uom ?? ''}`"
+          :hint="`Maksimal ${allocation?.unallocated_quantity ?? '—'} ${allocation?.uom ?? ''}`"
           :error="formErrors.quantity"
         />
         <AppInput
           v-model="form.initial_temperature"
-          label="Suhu awal (Â°C)"
+          label="Suhu awal (°C)"
           inputmode="decimal"
           hint="Opsional, maksimal 2 desimal."
           :error="formErrors.initial_temperature"

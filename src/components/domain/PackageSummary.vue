@@ -48,11 +48,11 @@ const detailRows = computed<DetailRow[]>(() => [
   },
   {
     label: 'Suhu awal',
-    value: props.item.initial_temperature ? `${props.item.initial_temperature} Â°C` : 'â€”',
+    value: props.item.initial_temperature ? `${props.item.initial_temperature} °C` : '—',
   },
   { label: 'Mulai holding', value: formatDateTime(props.item.holding_started_at) },
   { label: 'Selesai holding', value: formatDateTime(props.item.holding_finished_at) },
-  { label: 'Kategori', value: props.item.holding_policy?.food_category ?? 'â€”' },
+  { label: 'Kategori', value: props.item.holding_policy?.food_category ?? '—' },
 ])
 </script>
 
@@ -64,7 +64,7 @@ const detailRows = computed<DetailRow[]>(() => [
           {{ item.package_code }}
         </p>
         <p class="text-xs text-surface-500 dark:text-surface-400">
-          Paket #{{ item.package_number }} Â· {{ formatDecimal(item.quantity) }} {{ item.uom ?? '' }}
+          Paket #{{ item.package_number }} · {{ formatDecimal(item.quantity) }} {{ item.uom ?? '' }}
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-1.5">
@@ -104,7 +104,7 @@ const detailRows = computed<DetailRow[]>(() => [
       </div>
 
       <p class="mt-2 text-[11px] text-surface-500 dark:text-surface-400">
-        Kedaluwarsa {{ formatDateTime(item.expired_at) }} Â· dihitung
+        Kedaluwarsa {{ formatDateTime(item.expired_at) }} · dihitung
         {{ formatDateTime(item.calculated_at) }}
       </p>
     </div>
@@ -130,7 +130,7 @@ const detailRows = computed<DetailRow[]>(() => [
       v-if="item.holding_policy"
       class="rounded-xl bg-surface-50 px-3.5 py-3 text-[11px] text-surface-500 dark:bg-surface-850 dark:text-surface-400"
     >
-      Policy dibekukan saat alokasi pertama â€” warning
+      Policy dibekukan saat alokasi pertama - warning
       {{ item.holding_policy.warning_minutes }}m, maksimum
       {{ item.holding_policy.maximum_minutes }}m, discard
       {{ item.holding_policy.discard_minutes }}m. Perubahan rule berikutnya tidak memperpanjang

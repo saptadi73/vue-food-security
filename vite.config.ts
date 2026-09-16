@@ -9,7 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const backendOrigin = env.VITE_API_ORIGIN || 'http://localhost:8000'
-  const useProxy = env.VITE_USE_PROXY === 'true'
+  const useProxy = env.VITE_USE_PROXY ? env.VITE_USE_PROXY === 'true' : mode === 'development'
 
   return {
     plugins: [vue(), vueDevTools(), tailwindcss()],

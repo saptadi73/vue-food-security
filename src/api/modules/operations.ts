@@ -149,55 +149,6 @@ export interface ProductionCompleteInput {
   initial_temperature?: DecimalString | null
 }
 
-export interface ReceivingItemInput {
-  raw_material_id: Uuid
-  batch_code: string
-  quantity: DecimalString
-  temperature?: DecimalString | null
-  condition?: string | null
-  photo?: string | null
-  expired_date?: string | null
-  qr_code?: string | null
-}
-
-export interface ReceivingInput {
-  supplier_id: Uuid
-  kitchen_id: Uuid
-  received_at: string
-  items: ReceivingItemInput[]
-}
-
-export interface ReceivingData extends AuditFields {
-  receiving_id: Uuid
-  supplier_id: Uuid
-  kitchen_id: Uuid
-  operator: Uuid
-  received_at: string
-  status: 'CREATED' | 'COMPLETED' | 'CANCELLED'
-}
-
-export interface ReceivingItemData extends AuditFields {
-  receiving_item_id: Uuid
-  receiving_id: Uuid
-  raw_material_batch_id: Uuid
-  quantity: DecimalString
-  uom: string
-  temperature: DecimalString | null
-  condition: string | null
-  photo: string | null
-  accepted: boolean | null
-  batch: RawMaterialBatchData
-}
-
-export interface ReceivingDetail extends ReceivingData {
-  items: ReceivingItemData[]
-}
-
-export interface ReceivingCompleteInput {
-  expected_version: number
-  items: { receiving_item_id: Uuid; accepted: boolean }[]
-}
-
 export interface RawMaterialBatchData extends AuditFields {
   raw_material_batch_id: Uuid
   raw_material_id: Uuid
@@ -273,6 +224,11 @@ export interface ReceivingItemData extends AuditFields {
 
 export interface ReceivingDetail extends ReceivingData {
   items: ReceivingItemData[]
+}
+
+export interface ReceivingCompleteInput {
+  expected_version: number
+  items: { receiving_item_id: Uuid; accepted: boolean }[]
 }
 
 export type DeliveryStatus = 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED'

@@ -25,6 +25,8 @@ const packageResult = ref<PackageData | null>(null)
 const materialResult = ref<RawMaterialBatchData | null>(null)
 const receiptSaving = ref(false)
 const consumptionSaving = ref(false)
+const receiptAccepted = ref(false)
+const acceptedReceiptQuantity = ref<string | null>(null)
 const receiptErrors = ref<Record<string, string>>({})
 const consumptionErrors = ref<Record<string, string>>({})
 const receiptForm = ref({
@@ -91,6 +93,8 @@ async function resolve(value: string) {
   scanning.value = true
   packageResult.value = null
   materialResult.value = null
+  receiptAccepted.value = false
+  acceptedReceiptQuantity.value = null
   try {
     if (props.mode === 'material') {
       const page = await fsos.operations.rawMaterialBatches.list({
@@ -124,6 +128,25 @@ async function resolve(value: string) {
         } else if (context.delivery_status !== 'COMPLETED') {
           toast.warning('Delivery belum completed', { description: `Status saat ini ${context.delivery_status}` })
         }
+        if (packageResult.value.status === 'RECEIVED') {
+          receiptAccepted.value = true
+          try {
+            const receipts = await fsos.operations.schoolReceivings.list({
+              package_id: packageResult.value.package_id,
+              offset: 0,
+              limit: 20,
+            })
+            const acceptedReceipt = receipts.items.find((receipt) => receipt.accepted === true)
+            acceptedReceiptQuantity.value = acceptedReceipt?.received_quantity ?? null
+            if (acceptedReceipt?.received_quantity) {
+              consumptionForm.value.consumed_quantity = acceptedReceipt.received_quantity
+            }
+          } catch {
+            toast.warning('Detail penerimaan tidak dapat dibaca', {
+              description: 'Jumlah akhir tetap akan divalidasi oleh server saat konsumsi disimpan.',
+            })
+          }
+        }
       }
       toast.success('Paket ditemukan', { description: packageResult.value.package_code })
     }
@@ -143,12 +166,51 @@ async function submitSchoolReceiving() {
   const item = packageResult.value
   if (!item || receiptSaving.value) return
   receiptErrors.value = {}
+  if (item.status !== 'DELIVERED') {
+    receiptErrors.value.header = 'Penerimaan hanya dapat dicatat untuk paket berstatus DELIVERED.'
+    return
+  }
   if (!receiptForm.value.delivery_id.trim() || !receiptForm.value.school.trim()) {
     receiptErrors.value.header = 'Delivery ID dan sekolah tujuan wajib diisi.'
     return
   }
   if (!receiptForm.value.received_quantity.trim()) {
     receiptErrors.value.received_quantity = 'Jumlah diterima wajib diisi.'
+    return
+  }
+  const receivedQuantity = Number(receiptForm.value.received_quantity)
+  const expectedQuantity = Number(item.quantity)
+  if (!Number.isFinite(receivedQuantity) || receivedQuantity < 0) {
+    receiptErrors.value.received_quantity = 'Jumlah diterima harus berupa angka nol atau lebih.'
+    return
+  }
+  if (Number.isFinite(expectedQuantity) && receivedQuantity > expectedQuantity) {
+    receiptErrors.value.received_quantity = 'Jumlah diterima tidak boleh melebihi jumlah paket.'
+    return
+  }
+  if (receiptForm.value.condition === 'MISSING' && receivedQuantity !== 0) {
+    receiptErrors.value.received_quantity = 'Kondisi MISSING memerlukan jumlah diterima nol.'
+    return
+  }
+  if (receiptForm.value.condition !== 'MISSING' && receivedQuantity <= 0) {
+    receiptErrors.value.received_quantity = 'Kondisi GOOD atau DAMAGED memerlukan jumlah positif.'
+    return
+  }
+  const accepted = receiptForm.value.accepted === 'true'
+  const safeToAccept =
+    receiptForm.value.condition === 'GOOD' &&
+    item.holding_policy !== null &&
+    (item.timer_status === 'SAFE' || item.timer_status === 'WARNING')
+  if (accepted && !safeToAccept) {
+    receiptErrors.value.accepted =
+      'Paket hanya dapat diterima bila kondisi GOOD dan holding policy berstatus SAFE/WARNING.'
+    return
+  }
+  const needsReceiptNotes =
+    !accepted ||
+    (Number.isFinite(expectedQuantity) && receivedQuantity !== expectedQuantity)
+  if (needsReceiptNotes && !receiptForm.value.notes.trim()) {
+    receiptErrors.value.notes = 'Catatan wajib untuk penolakan atau perbedaan jumlah.'
     return
   }
   const expectedVersion = Number(receiptForm.value.expected_version)
@@ -165,15 +227,30 @@ async function submitSchoolReceiving() {
       expected_version: expectedVersion,
       received_quantity: receiptForm.value.received_quantity.trim(),
       condition: receiptForm.value.condition,
-      accepted: receiptForm.value.accepted === 'true',
+      accepted,
       temperature: receiptForm.value.temperature.trim() || null,
       photo: receiptForm.value.photo.trim() || null,
       notes: receiptForm.value.notes.trim() || null,
     })
     toast.success('Penerimaan sekolah tercatat', { description: shortId(receipt.school_receiving_id) })
-    receiptForm.value.expected_version = String(expectedVersion + 1)
-    consumptionForm.value.expected_version = String(expectedVersion + 1)
-    if (receipt.accepted) {
+    acceptedReceiptQuantity.value = receipt.accepted ? receipt.received_quantity : null
+    packageResult.value = {
+      ...item,
+      status: receipt.accepted ? 'RECEIVED' : 'REJECTED',
+      effective_status: receipt.accepted ? 'RECEIVED' : 'REJECTED',
+      version: expectedVersion + 1,
+    }
+    try {
+      packageResult.value = await fsos.packages.detail(item.package_id)
+      receiptAccepted.value = receipt.accepted === true && packageResult.value.status === 'RECEIVED'
+    } catch {
+      receiptAccepted.value = false
+      toast.warning('Status paket belum dimuat ulang', {
+        description: 'Status transaksi sudah diperbarui. Muat ulang sebelum tindakan berikutnya bila perlu.',
+      })
+    }
+    consumptionForm.value.expected_version = String(packageResult.value.version)
+    if (receipt.accepted && receipt.received_quantity) {
       consumptionForm.value.consumed_quantity = receipt.received_quantity ?? ''
       consumptionForm.value.discarded_quantity = '0'
     }
@@ -189,6 +266,10 @@ async function submitConsumption() {
   const item = packageResult.value
   if (!item || consumptionSaving.value) return
   consumptionErrors.value = {}
+  if (!receiptAccepted.value || item.status !== 'RECEIVED') {
+    consumptionErrors.value.quantity = 'Konsumsi hanya dapat dicatat setelah penerimaan diterima.'
+    return
+  }
   if (!consumptionForm.value.consumed_quantity.trim() || !consumptionForm.value.discarded_quantity.trim()) {
     consumptionErrors.value.quantity = 'Jumlah consumed dan discarded wajib diisi.'
     return
@@ -196,6 +277,33 @@ async function submitConsumption() {
   const expectedVersion = Number(consumptionForm.value.expected_version)
   if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
     consumptionErrors.value.expected_version = 'Version paket wajib integer valid.'
+    return
+  }
+  const consumedQuantity = Number(consumptionForm.value.consumed_quantity)
+  const discardedQuantity = Number(consumptionForm.value.discarded_quantity)
+  const receivedQuantity = Number(acceptedReceiptQuantity.value)
+  if (
+    !Number.isFinite(consumedQuantity) ||
+    !Number.isFinite(discardedQuantity) ||
+    consumedQuantity < 0 ||
+    discardedQuantity < 0
+  ) {
+    consumptionErrors.value.quantity = 'Jumlah consumed dan discarded harus berupa angka nol atau lebih.'
+    return
+  }
+  if (
+    !Number.isFinite(receivedQuantity) ||
+    Math.abs(consumedQuantity + discardedQuantity - receivedQuantity) > 0.000001
+  ) {
+    consumptionErrors.value.quantity = 'Jumlah consumed dan discarded harus sama dengan jumlah diterima.'
+    return
+  }
+  const outsideHolding =
+    (item.remaining_seconds !== null && item.remaining_seconds <= 0) ||
+    item.timer_status === 'EXPIRED' ||
+    item.timer_status === 'DISCARD_RECOMMENDED'
+  if ((discardedQuantity > 0 || outsideHolding) && !consumptionForm.value.notes.trim()) {
+    consumptionErrors.value.notes = 'Catatan wajib untuk discard atau konsumsi di luar holding policy.'
     return
   }
   consumptionSaving.value = true
@@ -208,7 +316,14 @@ async function submitConsumption() {
       notes: consumptionForm.value.notes.trim() || null,
     })
     toast.success('Konsumsi sekolah tercatat', { description: shortId(consumption.consumption_id) })
-    consumptionForm.value.expected_version = String(expectedVersion + 1)
+    receiptAccepted.value = false
+    try {
+      packageResult.value = await fsos.packages.detail(item.package_id)
+    } catch {
+      toast.warning('Status paket belum dimuat ulang', {
+        description: 'Konsumsi sudah tercatat. Muat ulang sebelum tindakan berikutnya.',
+      })
+    }
   } catch (error) {
     if (isApiError(error)) consumptionErrors.value = error.fieldErrors
     toast.fromError(error, 'Gagal mencatat konsumsi sekolah')
@@ -248,7 +363,7 @@ function onDetected(value: string) {
         <div v-else-if="materialResult" class="space-y-3 text-sm">
           <div><p class="text-xs text-surface-500">Kode batch</p><p class="font-mono font-bold">{{ materialResult.batch_code }}</p></div>
           <div><p class="text-xs text-surface-500">Status</p><p class="font-semibold">{{ materialResult.status }}</p></div>
-          <div><p class="text-xs text-surface-500">Kedaluwarsa</p><p>{{ materialResult.expired_date ?? 'â€”' }}</p></div>
+          <div><p class="text-xs text-surface-500">Kedaluwarsa</p><p>{{ materialResult.expired_date ?? '—' }}</p></div>
           <p class="rounded-xl bg-surface-50 p-3 text-xs text-surface-500 dark:bg-surface-850">Batch ditemukan. Lanjutkan proses pengeluaran bahan dengan memilih storage dan jumlah yang akan dikeluarkan.</p>
         </div>
         <EmptyState v-else compact icon="lucide:qr-code" title="Belum ada hasil" description="Pindai QR sesuai aktivitas pada halaman ini." />
@@ -261,9 +376,10 @@ function onDetected(value: string) {
         </template>
 
         <div v-if="packageResult && mode === 'school-receiving'" class="mt-4 border-t border-surface-200 pt-4 dark:border-surface-800">
-          <h3 class="mb-3 text-sm font-bold text-surface-800 dark:text-surface-100">Konfirmasi penerimaan sekolah</h3>
-          <p v-if="receiptErrors.header" class="mb-3 text-sm font-medium text-danger-600">{{ receiptErrors.header }}</p>
-          <div class="grid grid-cols-1 gap-3">
+          <template v-if="packageResult.status === 'DELIVERED'">
+            <h3 class="mb-3 text-sm font-bold text-surface-800 dark:text-surface-100">Konfirmasi penerimaan sekolah</h3>
+            <p v-if="receiptErrors.header" class="mb-3 text-sm font-medium text-danger-600">{{ receiptErrors.header }}</p>
+            <div class="grid grid-cols-1 gap-3">
             <AppInput v-model="receiptForm.delivery_id" label="Delivery ID" required placeholder="UUID delivery completed" :error="receiptErrors.delivery_id" />
             <AppInput v-model="receiptForm.school" label="School ID" required placeholder="UUID sekolah tujuan" :error="receiptErrors.school" />
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -279,10 +395,11 @@ function onDetected(value: string) {
               <AppInput v-model="receiptForm.photo" label="Referensi foto" placeholder="receipt/photo-001.jpg" :error="receiptErrors.photo" />
             </div>
             <AppInput v-model="receiptForm.notes" label="Catatan" placeholder="Wajib jika ditolak atau jumlah berbeda" :error="receiptErrors.notes" />
-            <AppButton icon="lucide:school" :loading="receiptSaving" @click="submitSchoolReceiving">Catat penerimaan</AppButton>
-          </div>
+              <AppButton icon="lucide:school" :loading="receiptSaving" @click="submitSchoolReceiving">Catat penerimaan</AppButton>
+            </div>
+          </template>
 
-          <div class="mt-5 border-t border-surface-200 pt-4 dark:border-surface-800">
+          <div v-if="receiptAccepted && packageResult.status === 'RECEIVED'" class="mt-5 border-t border-surface-200 pt-4 dark:border-surface-800">
             <h3 class="mb-3 text-sm font-bold text-surface-800 dark:text-surface-100">Finalisasi konsumsi / discard</h3>
             <p v-if="consumptionErrors.quantity" class="mb-3 text-sm font-medium text-danger-600">{{ consumptionErrors.quantity }}</p>
             <div class="grid grid-cols-1 gap-3">

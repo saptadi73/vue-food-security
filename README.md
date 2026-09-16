@@ -9,7 +9,7 @@ Default API:
 ```env
 VITE_API_ORIGIN=http://localhost:8000
 VITE_API_PREFIX=/api/v1
-VITE_USE_PROXY=false
+VITE_USE_PROXY=true
 VITE_DEFAULT_TENANT=FSOS_DEMO
 ```
 
