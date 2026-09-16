@@ -84,7 +84,13 @@ export const endpoints = {
   },
 
   // --- Rantai operasional ---
-  receivings: collection('/receivings'),
+  receivings: {
+    list: (p?: QueryParams) => `/receivings${q(p)}`,
+    create: () => '/receivings',
+    detail: (id: string) => `/receivings/${id}`,
+    complete: (id: string) => `/receivings/${id}/complete`,
+    cancel: (id: string) => `/receivings/${id}/cancel`,
+  },
   rawMaterialBatches: collection('/raw-material-batches'),
   productionBatches: {
     ...collection('/production-batches'),

@@ -38,11 +38,11 @@ function isActive(to: string) {
   >
     <!-- Brand -->
     <div class="flex h-16 shrink-0 items-center gap-3 px-4">
-      <span
-        class="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-emerald-700 text-white shadow-soft"
-      >
-        <Icon icon="lucide:leaf" :width="20" :height="20" />
-      </span>
+      <img
+        src="/logo-fsos.png"
+        alt="Logo Food Security"
+        class="size-11 shrink-0 object-contain drop-shadow-md"
+      />
       <div v-if="!collapsed" class="min-w-0 animate-fade-in">
         <p class="truncate text-sm font-extrabold tracking-tight text-surface-900 dark:text-white">
           {{ env.appName }}

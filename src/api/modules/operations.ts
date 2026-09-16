@@ -91,6 +91,52 @@ export interface RawMaterialBatchData extends AuditFields {
   qr_code: string | null
 }
 
+export type ReceivingStatus = 'CREATED' | 'COMPLETED' | 'CANCELLED'
+
+export interface ReceivingItemInput {
+  raw_material_id: Uuid
+  batch_code: string
+  quantity: DecimalString
+  temperature?: DecimalString | null
+  condition?: string | null
+  photo?: string | null
+  expired_date?: string | null
+  qr_code?: string | null
+}
+
+export interface ReceivingInput {
+  supplier_id: Uuid
+  kitchen_id: Uuid
+  received_at: string
+  items: ReceivingItemInput[]
+}
+
+export interface ReceivingData extends AuditFields {
+  receiving_id: Uuid
+  supplier_id: Uuid
+  kitchen_id: Uuid
+  operator: Uuid
+  received_at: string
+  status: ReceivingStatus
+}
+
+export interface ReceivingItemData extends AuditFields {
+  receiving_item_id: Uuid
+  receiving_id: Uuid
+  raw_material_batch_id: Uuid
+  quantity: DecimalString
+  uom: string
+  temperature: DecimalString | null
+  condition: string | null
+  photo: string | null
+  accepted: boolean | null
+  batch: RawMaterialBatchData
+}
+
+export interface ReceivingDetail extends ReceivingData {
+  items: ReceivingItemData[]
+}
+
 export type DeliveryStatus = 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED'
 
 export interface DeliveryData extends AuditFields {
@@ -189,12 +235,37 @@ export const packagesApi = {
     api.get<AllocationData>(endpoints.productionBatches.packaging(productionBatchId)),
 }
 
+export const receivingsApi = {
+  list: (query: PageQuery & { supplier_id?: Uuid; kitchen_id?: Uuid; status?: ReceivingStatus } = {}) =>
+    api.get<OffsetPage<ReceivingData>>(endpoints.receivings.list(query)),
+  detail: (id: string) => api.get<ReceivingDetail>(endpoints.receivings.detail(id)),
+  create: (input: ReceivingInput) =>
+    api.post<ReceivingDetail>(endpoints.receivings.create(), input),
+  complete: (
+    id: string,
+    input: { expected_version: number; items: { receiving_item_id: Uuid; accepted: boolean }[] },
+  ) => api.post<ReceivingDetail>(endpoints.receivings.complete(id), input),
+  cancel: (id: string, expectedVersion: number) =>
+    api.post<ReceivingDetail>(endpoints.receivings.cancel(id), {
+      expected_version: expectedVersion,
+    }),
+}
+
 export const operationsApi = {
-  receivings: createResource<Record<string, unknown>>(endpoints.receivings, 'Penerimaan bahan'),
-  rawMaterialBatches: createResource<RawMaterialBatchData>(
-    endpoints.rawMaterialBatches,
-    'Batch bahan',
-  ),
+  receivings: receivingsApi,
+  rawMaterialBatches: {
+    list: (query: PageQuery & {
+      receiving_id?: Uuid
+      raw_material_id?: Uuid
+      supplier_id?: Uuid
+      status?: RawMaterialBatchData['status']
+      search?: string
+      material_category?: string
+      sort?: 'CREATED_DESC' | 'FIFO' | 'FEFO'
+    } = {}) => api.get<OffsetPage<RawMaterialBatchData>>(endpoints.rawMaterialBatches.list(query)),
+    detail: (id: string) =>
+      api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.detail(id)),
+  },
   productionBatches: createResource<Record<string, unknown>>(
     endpoints.productionBatches,
     'Batch produksi',

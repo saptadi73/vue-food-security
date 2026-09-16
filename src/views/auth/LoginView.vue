@@ -84,11 +84,11 @@ async function submit() {
 
     <div class="animate-fade-up relative w-full max-w-md">
       <div class="mb-7 flex flex-col items-center text-center">
-        <span
-          class="mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-emerald-700 text-white shadow-float"
-        >
-          <Icon icon="lucide:leaf" :width="28" :height="28" />
-        </span>
+        <img
+          src="/logo-fsos.png"
+          alt="Logo Food Security"
+          class="mb-4 size-32 object-contain drop-shadow-2xl"
+        />
         <h1 class="text-2xl font-extrabold tracking-tight text-white">{{ env.appName }}</h1>
         <p class="mt-1 text-sm text-surface-400">{{ env.appLongName }}</p>
       </div>

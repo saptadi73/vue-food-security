@@ -18,13 +18,16 @@ import {
   type TraceGraphData,
   type TraverseDirection,
 } from '@/api/modules/traceability'
+import { PACKAGE_QR_PREFIX } from '@/api/modules/operations'
 import { useToastStore } from '@/stores/toast'
 import { formatDateTime, shortId } from '@/utils/format'
 
 const route = useRoute()
 const toast = useToastStore()
 
-const assetUuid = ref(typeof route.query.asset === 'string' ? route.query.asset : '')
+const initialAsset = typeof route.query.asset === 'string' ? route.query.asset : ''
+const lookupValue = ref(initialAsset)
+const assetUuid = ref(initialAsset)
 const direction = ref<TraverseDirection>('backward')
 const depth = ref(TRACE_LIMITS.depth.default)
 const nodeLimit = ref(TRACE_LIMITS.nodeLimit.default)
@@ -50,8 +53,8 @@ const impactChart = computed(() => {
 })
 
 async function investigate() {
-  const uuid = assetUuid.value.trim()
-  if (!uuid || loading.value) return
+  const lookup = lookupValue.value.trim()
+  if (!lookup || loading.value) return
 
   loading.value = true
   error.value = null
@@ -60,6 +63,19 @@ async function investigate() {
   impact.value = null
 
   try {
+    let uuid = lookup
+    if (lookup.startsWith(PACKAGE_QR_PREFIX)) {
+      const packageData = await fsos.packages.resolve(lookup)
+      if (!packageData.asset_uuid) {
+        toast.warning('Jejak paket belum tersedia', {
+          description: 'Paket ditemukan, tetapi belum terdaftar sebagai digital asset.',
+        })
+        return
+      }
+      uuid = packageData.asset_uuid
+    }
+    assetUuid.value = uuid
+
     // Passport dulu: bila asset tidak ada, dua request lain tidak perlu dijalankan.
     passport.value = await fsos.traceability.passport(uuid)
     const [graphResult, impactResult] = await Promise.allSettled([
@@ -80,8 +96,9 @@ async function investigate() {
       error.value = cause
       if (cause.kind === 'not_found') {
         toast.warning('Asset tidak ditemukan', {
-          description:
-            'asset_uuid adalah UUID registry, bukan package_id atau production_batch_id.',
+          description: lookup.startsWith(PACKAGE_QR_PREFIX)
+            ? 'QR paket valid, tetapi asset traceability belum tersedia.'
+            : 'Gunakan hasil pindai QR kemasan atau UUID registry digital asset.',
         })
       }
     }
@@ -90,9 +107,10 @@ async function investigate() {
   }
 }
 
-if (assetUuid.value) void investigate()
+if (lookupValue.value) void investigate()
 
 function focusNode(uuid: string) {
+  lookupValue.value = uuid
   assetUuid.value = uuid
   void investigate()
 }
@@ -110,12 +128,12 @@ function focusNode(uuid: string) {
     <AppCard class="mb-4" title="Parameter investigasi" icon="lucide:search">
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-12">
         <AppInput
-          v-model="assetUuid"
+          v-model="lookupValue"
           class="sm:col-span-5"
-          label="Asset UUID"
-          icon="lucide:fingerprint"
-          placeholder="UUID registry digital_asset"
-          hint="Berbeda dari entity_uuid sumber."
+          label="QR paket atau Asset UUID"
+          icon="lucide:qr-code"
+          placeholder="Pindai QR kemasan"
+          hint="UUID hanya untuk investigasi teknis lanjutan."
           @keydown.enter="investigate"
         />
         <div class="sm:col-span-3">
@@ -160,14 +178,19 @@ function focusNode(uuid: string) {
       </div>
 
       <template #footer>
-        <AppButton
-          icon="lucide:radar"
-          :loading="loading"
-          :disabled="!assetUuid.trim()"
-          @click="investigate"
-        >
-          Telusuri
-        </AppButton>
+        <div class="flex flex-wrap gap-2">
+          <AppButton icon="lucide:scan-line" variant="outline" to="/scan/traceability">
+            Pindai QR
+          </AppButton>
+          <AppButton
+            icon="lucide:radar"
+            :loading="loading"
+            :disabled="!lookupValue.trim()"
+            @click="investigate"
+          >
+            Telusuri
+          </AppButton>
+        </div>
       </template>
     </AppCard>
 
@@ -181,7 +204,7 @@ function focusNode(uuid: string) {
       v-else-if="!passport"
       icon="lucide:git-branch"
       title="Belum ada investigasi"
-      description="Masukkan asset UUID lalu jalankan penelusuran untuk melihat passport, graph dan dampak hilir."
+      description="Pindai QR kemasan untuk melihat passport, asal bahan, traversal graph, dan dampak hilir."
     />
 
     <template v-else>
