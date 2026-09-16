@@ -5343,10 +5343,12 @@ hanya boleh digunakan satu delivery CREATED atau IN_TRANSIT sekaligus. Paket han
 boleh berada pada satu manifest non-CANCELLED, termasuk yang COMPLETED. Check dilakukan
 di bawah row lock driver, vehicle, kitchen, sekolah, dan paket berurutan.
 
-Create menghitung estimasi jarak dan durasi dari koordinat kitchen asal ke sekolah
-tujuan terjauh memakai rumus garis lurus/haversine dan default 30 km/jam bila
-`average_speed_kmph` tidak dikirim. Untuk multi-sekolah, estimasi adalah jarak
-terjauh satu arah, bukan optimasi rute multi-stop. Jika koordinat kitchen/sekolah
+Create menghitung estimasi jarak jalan dan durasi dari koordinat kitchen asal ke
+sekolah tujuan memakai routing matrix. Backend mencoba provider sesuai konfigurasi
+`Google Routes API -> Mapbox Matrix -> OSRM Table -> Haversine`; credential provider
+tetap hanya di backend. Untuk multi-sekolah, estimasi memilih tujuan dengan durasi
+terlama, bukan optimasi urutan rute multi-stop. Haversine memakai default 30 km/jam
+bila `average_speed_kmph` tidak dikirim. Jika koordinat kitchen/sekolah
 belum lengkap, field estimasi null dan depart wajib menerima ETA manual. Create
 mengubah package.status menjadi ALLOCATED dan version paket +1, membuat header/
 version 1 dan manifest immutable, sync registry paket/delivery serta event. Tidak
@@ -5410,16 +5412,19 @@ jumlah kemasan gunakan `package_count`.
 
 Tracking delivery memakai Delivery.Read dan read-only. `GET /deliveries/{identifier}/tracking`
 mengambil GPS terakhir dari `gps_log` berdasarkan vehicle manifest, suhu terakhir dari
-`temperature_log` device GPS kendaraan bila ada, lalu menghitung sisa jarak garis lurus
-ke sekolah tujuan terjauh. Remaining duration memakai speed GPS terakhir; bila speed
-kosong/nol, memakai estimasi route delivery; fallback 30 km/jam. Jika belum ada GPS
+`temperature_log` device GPS kendaraan bila ada, lalu meminta jarak jalan dan durasi
+dari posisi kendaraan ke seluruh sekolah tujuan. Backend memilih tujuan dengan durasi
+terlama dan memakai fallback provider yang sama seperti create. Jika seluruh provider
+eksternal gagal, Haversine memakai speed GPS terakhir; bila speed kosong/nol memakai
+estimasi route delivery lalu fallback 30 km/jam. Jika belum ada GPS
 atau koordinat tujuan tidak lengkap, `latest_gps` dan remaining field dapat null.
 Response field: delivery_id, vehicle, status, destination_count, latest_gps nullable
 (gps_log_id, recorded_at, latitude, longitude, speed, heading), latest_temperature
 nullable (temperature_log_id, device_uuid, recorded_at, temperature, unit),
 remaining_distance_km nullable, remaining_duration_minutes nullable,
-estimated_arrival_time nullable dan calculated_at UTC. Endpoint ini bukan MQTT
-ingestion, bukan WebSocket dan tidak menulis event.
+estimated_arrival_time nullable dan calculated_at UTC. API key Google/Mapbox dan URL
+OSRM tidak pernah dikirim ke frontend. Endpoint ini bukan MQTT ingestion, bukan
+WebSocket dan tidak menulis event.
 
 ### HTTP ingestion telemetry GPS dan suhu
 

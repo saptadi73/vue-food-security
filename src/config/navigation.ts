@@ -51,32 +51,33 @@ export const navigation: NavSection[] = [
     icon: 'lucide:git-branch',
     items: [
       {
-        label: 'Cek Kemasan',
-        to: '/scan/traceability',
-        icon: 'lucide:scan-line',
-        description: 'Resolve paket dari QR',
+        label: 'Penerimaan Bahan',
+        to: '/raw-material-batches',
+        icon: 'lucide:package-check',
+        description: 'QR batch bahan makanan yang diterima',
       },
-      { label: 'Pindai Bahan Storage', to: '/scan/material', icon: 'lucide:wheat' },
-      { label: 'Loading Delivery', to: '/scan/loading', icon: 'lucide:truck' },
-      { label: 'Penerimaan Sekolah', to: '/scan/school-receiving', icon: 'lucide:school' },
-      { label: 'Pengiriman Aktif', to: '/deliveries', icon: 'lucide:truck' },
+      { label: 'Pengeluaran Bahan', to: '/scan/material', icon: 'lucide:wheat' },
+      {
+        label: 'Batch Produksi',
+        to: '/production-batches',
+        icon: 'lucide:chef-hat',
+        description: 'Rencana produksi, cooking, suhu inti dan waktu selesai masak',
+      },
       {
         label: 'Paket & QR',
         to: '/packages',
         icon: 'lucide:package',
         description: 'Alokasi paket dan pembuatan QR',
       },
+      { label: 'Loading Delivery', to: '/scan/loading', icon: 'lucide:truck' },
+      { label: 'Pengiriman Aktif', to: '/deliveries', icon: 'lucide:truck' },
+      { label: 'Live Tracking Delivery', to: '/deliveries/tracking', icon: 'lucide:map' },
+      { label: 'Penerimaan Sekolah', to: '/scan/school-receiving', icon: 'lucide:school' },
       {
-        label: 'Penerimaan Bahan',
-        to: '/raw-material-batches',
-        icon: 'lucide:package-check',
-        description: 'QR batch bahan makanan yang diterima',
-      },
-      {
-        label: 'Batch Produksi',
-        to: '/production-batches',
-        icon: 'lucide:chef-hat',
-        description: 'Rencana produksi, cooking, suhu inti dan waktu selesai masak',
+        label: 'Cek Kemasan',
+        to: '/scan/traceability',
+        icon: 'lucide:scan-line',
+        description: 'Resolve paket dari QR',
       },
       {
         label: 'Jejak Asset',
@@ -144,5 +145,4 @@ export const mobileQuickNav: NavItem[] = [
   { label: 'Jejak', to: '/traceability', icon: 'lucide:git-branch' },
   { label: 'Alarm', to: '/monitoring/alarms', icon: 'lucide:siren' },
 ]
-
 

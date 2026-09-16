@@ -1,5 +1,11 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-17 - Routing jalan fleet Google/Mapbox/OSRM
+
+- Estimasi pada create/depart delivery dan `GET /api/v1/deliveries/{identifier}/tracking` sekarang memakai routing jalan dengan urutan Google Routes API, Mapbox Matrix, OSRM Table, lalu Haversine sebagai fallback lokal.
+- Method, path, payload dan bentuk response tidak berubah. Nilai `estimated_distance_km`, `estimated_duration_minutes`, `remaining_distance_km`, `remaining_duration_minutes`, dan `estimated_arrival_time` kini dapat berasal dari jarak/durasi berkendara aktual.
+- Frontend tidak mengirim atau menerima API key provider. Koordinat berasal dari master kitchen/sekolah dan GPS armada; untuk multi-tujuan backend memilih tujuan dengan durasi terlama, belum mengoptimalkan urutan stop.
+
 ## 2026-09-16 - Frontend School Consumption workflow
 
 - Project frontend memperluas halaman scan `Penerimaan Sekolah` (`/scan/school-receiving`) dengan form finalisasi konsumsi/discard setelah paket diterima sekolah.
