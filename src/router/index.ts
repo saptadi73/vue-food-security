@@ -41,6 +41,12 @@ const router = createRouter({
           meta: { title: 'Sesi Perangkat' },
         },
         {
+          path: 'monitoring/mqtt-bindings',
+          name: 'monitoring-mqtt-bindings',
+          component: () => import('@/views/monitoring/MqttBindingsView.vue'),
+          meta: { title: 'Binding MQTT Armada' },
+        },
+        {
           path: 'scan',
           name: 'scan',
           redirect: '/scan/traceability',
@@ -187,5 +193,4 @@ router.afterEach((to) => {
 })
 
 export default router
-
 

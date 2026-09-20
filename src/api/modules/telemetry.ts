@@ -19,6 +19,23 @@ export interface DeviceSessionRecord extends Record<string, unknown> {
   disconnected_at?: string | null
 }
 
+export interface MqttEventRecord extends Record<string, unknown> {
+  message_uuid: Uuid
+  tenant_id: Uuid
+  topic: string
+  qos: number
+  received_at: string
+  processed: boolean
+  payload_json: unknown | null
+  payload_text: string | null
+}
+
+export interface MqttTopicRecord extends Record<string, unknown> {
+  topic: string
+  event_count: number
+  latest_received_at: string
+}
+
 export interface HoldingRule extends Record<string, unknown> {
   holding_rule_id: Uuid
   tenant_id: Uuid
@@ -51,6 +68,13 @@ export const deviceSessionsApi = {
     api.post<DeviceSessionRecord>(endpoints.deviceSessions.end(id), {
       disconnected_at: disconnectedAt,
     }),
+}
+
+export const mqttApi = {
+  topics: (query: PageQuery & Record<string, unknown> = {}) =>
+    api.get<OffsetPage<MqttTopicRecord>>(endpoints.mqtt.topics(query)),
+  events: (query: PageQuery & Record<string, unknown> = {}) =>
+    api.get<OffsetPage<MqttEventRecord>>(endpoints.mqtt.events(query)),
 }
 
 const holdingRuleResource = createResource<HoldingRule, HoldingRuleInput>(

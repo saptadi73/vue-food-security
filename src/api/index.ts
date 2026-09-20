@@ -10,7 +10,7 @@ import { dashboardApi } from './modules/dashboard'
 import { mastersApi } from './modules/masters'
 import { operationsApi, packagesApi } from './modules/operations'
 import { complaintsApi, notificationsApi, recallsApi } from './modules/incidents'
-import { alarmRulesApi, alarmsApi, deviceSessionsApi, holdingRulesApi } from './modules/telemetry'
+import { alarmRulesApi, alarmsApi, deviceSessionsApi, holdingRulesApi, mqttApi } from './modules/telemetry'
 import { traceabilityApi } from './modules/traceability'
 import { systemApi } from './modules/system'
 
@@ -28,6 +28,7 @@ export const fsos = {
   alarmRules: alarmRulesApi,
   holdingRules: holdingRulesApi,
   deviceSessions: deviceSessionsApi,
+  mqtt: mqttApi,
   traceability: traceabilityApi,
 } as const
 

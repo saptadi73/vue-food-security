@@ -82,6 +82,10 @@ export const endpoints = {
     detail: (id: string) => `/device-sessions/${id}`,
     end: (id: string) => `/device-sessions/${id}/end`,
   },
+  mqtt: {
+    events: (p?: QueryParams) => `/mqtt/events${q(p)}`,
+    topics: (p?: QueryParams) => `/mqtt/topics${q(p)}`,
+  },
 
   // --- Rantai operasional ---
   receivings: {
@@ -175,7 +179,6 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-
 
 
 

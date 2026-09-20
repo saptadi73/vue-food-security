@@ -44,6 +44,13 @@ export const navigation: NavSection[] = [
         icon: 'lucide:radio',
         description: 'Koneksi perangkat IoT',
       },
+      {
+        label: 'Binding MQTT Armada',
+        to: '/monitoring/mqtt-bindings',
+        icon: 'lucide:radio-tower',
+        permission: 'Device.Read',
+        description: 'Pilih topic/event lalu hubungkan GPS ke armada',
+      },
     ],
   },
   {
@@ -145,4 +152,3 @@ export const mobileQuickNav: NavItem[] = [
   { label: 'Jejak', to: '/traceability', icon: 'lucide:git-branch' },
   { label: 'Alarm', to: '/monitoring/alarms', icon: 'lucide:siren' },
 ]
-
