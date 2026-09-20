@@ -61,7 +61,8 @@ Login mengirim field `tenant`, bukan wajib `tenant_id`:
 - Master CRUD: kitchen, storage, zone/rak, supplier, raw material, school, vehicle, driver, food item, recipe, packaging type, device, device binding.
 - Monitoring MQTT: halaman **Binding MQTT Armada** (`/monitoring/mqtt-bindings`)
   menampilkan topic dan event yang sudah tersimpan, kemudian membuat Device GPS
-  dan binding ke armada. Live MQTT worker tetap bergantung pada backend.
+  dan binding ke armada. Event sensor suhu membuat Device sensor dengan selector
+  event/sensor; live ingestion dijalankan backend secara opt-in.
 - Sensor makanan jadi dapat dipilih saat complete Production Batch dan start
   holding package; pembacaan suhu aktual harus menyertakan target batch/package
   dengan binding sensor aktif.
@@ -99,7 +100,6 @@ npm run dev
 ```sh
 npm run build
 ```
-
 
 
 

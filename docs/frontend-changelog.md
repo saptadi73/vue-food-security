@@ -1,5 +1,12 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Debug response discovery MQTT
+
+- Halaman `/monitoring/mqtt-bindings` menampilkan debug aman untuk request
+  `GET /api/v1/mqtt/topics`: endpoint, status/state, jumlah item, kode error,
+  `request_id`, dan `correlation_id`.
+- Access token, tenant credential, password, dan payload sensitif tidak ditampilkan.
+
 ## 2026-09-20 - Binding sensor makanan pada production dan holding
 
 - Form complete Production Batch sekarang dapat memilih device aktif bertipe
@@ -17,10 +24,12 @@
 - Halaman memakai `GET /api/v1/mqtt/topics` untuk daftar topic dan
   `GET /api/v1/mqtt/events?topic=...` untuk daftar event pada topic terpilih.
 - Setelah event dipilih, frontend membuat Device ACTIVE dengan `device_uuid`
-  valid dari payload bila tersedia dan `mqtt_topic` dari topic terpilih, lalu
-  membuat binding melalui `POST /api/v1/device-bindings`.
-- Endpoint discovery masih read-only terhadap `mqtt_message_log`; halaman ini
-  belum menerima live topic karena MQTT worker backend belum aktif.
+  valid dari payload bila tersedia, `mqtt_topic`, `mqtt_event`, dan `mqtt_sensor`
+  dari event terpilih. Event GPS kemudian membuat binding melalui
+  `POST /api/v1/device-bindings`; event sensor suhu membuat Device sensor tanpa
+  binding armada untuk dipilih saat production/holding.
+- Live ingestion dijalankan backend secara opt-in melalui konfigurasi MQTT worker;
+  halaman ini tetap memakai discovery API untuk konfigurasi binding.
 
 ## 2026-09-17 - Routing jalan fleet Google Routes API
 

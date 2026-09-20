@@ -1985,6 +1985,8 @@ Respons memakai `JSON envelope`, `X-Request-ID`, `Cache-Control: no-store`, `Pra
 | firmware | string / tidak / ya | Maksimal 100 |
 | hardware | string / tidak / ya | Maksimal 100 |
 | mqtt_topic | string / tidak / ya | Maksimal 512 |
+| mqtt_event | string / tidak / ya | Selector payload event untuk topic multiplexed |
+| mqtt_sensor | integer / tidak / ya | Selector payload sensor, minimal 0 |
 | status | string enum / tidak / tidak | REGISTERED/ACTIVE/INACTIVE; default REGISTERED |
 | last_online | datetime UTC / tidak / ya | ISO 8601 UTC |
 

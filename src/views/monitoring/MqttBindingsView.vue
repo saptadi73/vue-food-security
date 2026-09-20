@@ -8,6 +8,8 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect, { type SelectOption } from '@/components/ui/AppSelect.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { fsos } from '@/api'
+import { isApiError } from '@/api'
+import { env } from '@/config/env'
 import type { DeviceInput, Vehicle } from '@/api/modules/masters'
 import type { MqttEventRecord, MqttTopicRecord } from '@/api/modules/telemetry'
 import { useToastStore } from '@/stores/toast'
@@ -26,6 +28,7 @@ const loadingTopics = ref(false)
 const loadingEvents = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
+const debugResponse = ref<Record<string, unknown> | null>(null)
 
 const vehicleOptions = computed<SelectOption[]>(() =>
   vehicles.value
@@ -52,19 +55,58 @@ const eventDeviceUuid = computed(() => {
 
 const eventType = computed(() => {
   const candidate = payload.value.device_type ?? payload.value.type ?? payload.value.event_type
-  return typeof candidate === 'string' ? candidate : 'GPS'
+  if (typeof candidate === 'string') return candidate
+  return selectedEvent.value?.topic.endsWith('/gps') || payload.value.event === 'gps' ? 'GPS' : 'FOOD_TEMPERATURE'
 })
+
+const mqttEvent = computed(() => typeof payload.value.event === 'string' ? payload.value.event : null)
+const mqttSensor = computed(() => typeof payload.value.sensor === 'number' ? payload.value.sensor : null)
 
 async function loadTopics() {
   loadingTopics.value = true
   error.value = null
+  debugResponse.value = {
+    phase: 'topics',
+    state: 'loading',
+    method: 'GET',
+    endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+  }
   try {
     const page = await fsos.mqtt.topics({ limit: 100 })
     topics.value = page.items
+    debugResponse.value = {
+      phase: 'topics',
+      state: 'success',
+      method: 'GET',
+      endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+      item_count: page.items.length,
+      topics: page.items.map((item) => item.topic),
+      next_offset: page.next_offset,
+    }
     const firstTopic = page.items[0]
     if (!selectedTopic.value && firstTopic) await selectTopic(firstTopic.topic)
   } catch (cause) {
     error.value = 'Daftar topic MQTT belum dapat dimuat.'
+    debugResponse.value = isApiError(cause)
+      ? {
+          phase: 'topics',
+          state: 'error',
+          method: cause.method,
+          endpoint: `${env.apiBase}${cause.path}`,
+          status: cause.status,
+          code: cause.code,
+          message: cause.message,
+          display_message: cause.displayMessage,
+          request_id: cause.requestId,
+          correlation_id: cause.correlationId,
+        }
+      : {
+          phase: 'topics',
+          state: 'error',
+          method: 'GET',
+          endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+          message: cause instanceof Error ? cause.message : String(cause),
+        }
     toast.fromError(cause, 'Gagal memuat topic MQTT')
   } finally {
     loadingTopics.value = false
@@ -102,26 +144,32 @@ function chooseEvent(event: MqttEventRecord) {
 }
 
 async function createAndBind() {
-  if (!selectedEvent.value || !selectedVehicle.value || !deviceName.value.trim()) return
+  if (!selectedEvent.value || !deviceName.value.trim() || (eventType.value === 'GPS' && !selectedVehicle.value)) return
   saving.value = true
   try {
     const input: DeviceInput = {
       device_uuid: eventDeviceUuid.value || null,
       device_name: deviceName.value.trim(),
-      device_type: 'GPS',
+      device_type: eventType.value,
       hardware: hardware.value.trim() || null,
       mqtt_topic: selectedEvent.value.topic,
+      mqtt_event: mqttEvent.value,
+      mqtt_sensor: mqttSensor.value,
       status: 'ACTIVE',
       zone_id: null,
       firmware: null,
       last_online: selectedEvent.value.received_at,
     }
     const device = await fsos.masters.devices.create(input)
-    await fsos.masters.deviceBindings.create({
-      device_id: device.device_id,
-      vehicle_id: selectedVehicle.value,
-    })
-    toast.success('Device MQTT berhasil dibuat dan dibinding ke armada')
+    if (eventType.value === 'GPS' && selectedVehicle.value) {
+      await fsos.masters.deviceBindings.create({
+        device_id: device.device_id,
+        vehicle_id: selectedVehicle.value,
+      })
+    }
+    toast.success(eventType.value === 'GPS'
+      ? 'Device MQTT berhasil dibuat dan dibinding ke armada'
+      : 'Device sensor MQTT berhasil dibuat dengan selector event')
     selectedEvent.value = null
     selectedVehicle.value = null
     await loadTopics()
@@ -141,7 +189,7 @@ onMounted(() => {
   <div class="space-y-5">
     <PageHeader
       title="Binding MQTT Armada"
-      description="Pilih topic dan event MQTT yang tersimpan, buat Device GPS, lalu hubungkan ke armada. MQTT live consumer belum aktif di backend."
+      description="Pilih topic dan event MQTT, buat Device dengan selector payload, lalu hubungkan GPS ke armada."
       icon="lucide:radio-tower"
       tag="Device.Read"
     >
@@ -155,6 +203,12 @@ onMounted(() => {
     <div v-if="error" class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
       {{ error }}
     </div>
+
+    <details class="rounded-xl border border-surface-200 bg-surface-50 p-4 text-xs dark:border-surface-700 dark:bg-surface-900/60" open>
+      <summary class="cursor-pointer font-semibold text-surface-700 dark:text-surface-200">Debug response GET topic</summary>
+      <pre class="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-950 p-3 font-mono text-[11px] text-surface-100">{{ JSON.stringify(debugResponse, null, 2) }}</pre>
+      <p class="mt-2 text-surface-500">Token dan kredensial tidak ditampilkan. Gunakan <code>request_id</code> untuk mencocokkan log backend.</p>
+    </details>
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
       <AppCard title="1. Topic MQTT tersimpan" subtitle="Pilih topic untuk melihat event terakhir" icon="lucide:list-tree" :loading="loadingTopics">
@@ -202,14 +256,19 @@ onMounted(() => {
           <dl class="mt-3 space-y-1 text-xs text-surface-500">
             <div class="flex justify-between gap-3"><dt>Device UUID</dt><dd class="font-mono">{{ eventDeviceUuid || 'Akan dibuat backend' }}</dd></div>
             <div class="flex justify-between gap-3"><dt>Tipe</dt><dd>{{ eventType }}</dd></div>
+            <div class="flex justify-between gap-3"><dt>Selector event</dt><dd>{{ mqttEvent || 'Semua event' }}</dd></div>
+            <div class="flex justify-between gap-3"><dt>Selector sensor</dt><dd>{{ mqttSensor ?? 'Semua sensor' }}</dd></div>
           </dl>
         </div>
         <div class="space-y-4">
           <AppInput v-model="deviceName" label="Nama device" required placeholder="GPS Armada 01" />
           <AppInput v-model="hardware" label="Hardware" placeholder="gps-tracker-v1" />
-          <AppSelect v-model="selectedVehicle" label="Armada tujuan" required :options="vehicleOptions" placeholder="Pilih armada aktif" />
-          <AppButton block icon="lucide:link-2" :loading="saving" :disabled="!selectedVehicle || !deviceName.trim()" @click="createAndBind">
-            Buat Device & Binding Armada
+          <AppSelect v-if="eventType === 'GPS'" v-model="selectedVehicle" label="Armada tujuan" required :options="vehicleOptions" placeholder="Pilih armada aktif" />
+          <p v-else class="rounded-lg bg-surface-50 p-3 text-xs text-surface-600 dark:bg-surface-800/60 dark:text-surface-300">
+            Sensor suhu dibuat sebagai Device. Binding ke production batch atau holding dilakukan saat proses operasional.
+          </p>
+          <AppButton block icon="lucide:link-2" :loading="saving" :disabled="(eventType === 'GPS' && !selectedVehicle) || !deviceName.trim()" @click="createAndBind">
+            {{ eventType === 'GPS' ? 'Buat Device & Binding Armada' : 'Buat Device Sensor' }}
           </AppButton>
           <p class="text-xs text-surface-500">Jika pembuatan Device berhasil tetapi binding gagal, Device tetap tercatat dan dapat diperbaiki dari Master Perangkat/Binding.</p>
         </div>

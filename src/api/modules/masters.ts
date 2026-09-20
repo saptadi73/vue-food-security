@@ -164,6 +164,8 @@ export interface DeviceInput {
   firmware?: string | null
   hardware?: string | null
   mqtt_topic?: string | null
+  mqtt_event?: string | null
+  mqtt_sensor?: number | null
   status?: DeviceStatus
   last_online?: string | null
 }
