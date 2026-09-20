@@ -10,6 +10,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import QrCodeView from '@/components/qr/QrCodeView.vue'
 import { fsos, isApiError } from '@/api'
+import { mastersApi } from '@/api/modules/masters'
 import type { RawMaterialBatchData } from '@/api/modules/operations'
 import { usePaginatedList } from '@/composables/usePaginatedList'
 import { useReferenceOptions } from '@/composables/useReferenceOptions'
@@ -25,6 +26,7 @@ type BatchStatusFilter = 'ACCEPTED' | 'CREATED' | 'REJECTED' | 'CANCELLED' | nul
 
 const status = ref<BatchStatusFilter>('ACCEPTED')
 const qrTarget = ref<RawMaterialBatchData | null>(null)
+const qrProduct = ref<{ name: string; code: string } | null>(null)
 const createOpen = ref(false)
 const saving = ref(false)
 const recoveringId = ref<string | null>(null)
@@ -90,6 +92,19 @@ function nowLocalMinute() {
 
 function applyStatus() {
   list.reset()
+}
+
+async function openQr(row: RawMaterialBatchData) {
+  qrTarget.value = row
+  qrProduct.value = null
+  try {
+    const material = await mastersApi.rawMaterials.detail(row.raw_material_id)
+    if (qrTarget.value?.raw_material_batch_id === row.raw_material_batch_id) {
+      qrProduct.value = { name: material.material_name, code: material.material_code }
+    }
+  } catch {
+    /* Label tetap dapat dicetak dengan kode batch saat referensi bahan tidak tersedia. */
+  }
 }
 
 async function openCreate() {
@@ -286,7 +301,7 @@ async function cancelDraft(row: RawMaterialBatchData) {
       </template>
       <template #cell-qr_code="{ row }">
         <span v-if="!row.qr_code" class="text-xs text-surface-400">Belum ada</span>
-        <AppButton v-else size="sm" variant="outline" icon="lucide:qr-code" @click="qrTarget = row">
+        <AppButton v-else size="sm" variant="outline" icon="lucide:qr-code" @click="openQr(row)">
           Buat QR
         </AppButton>
       </template>
@@ -325,6 +340,9 @@ async function cancelDraft(row: RawMaterialBatchData) {
           :value="qrTarget.qr_code!"
           :caption="qrTarget.batch_code"
           :subcaption="`Bahan - ${shortId(qrTarget.raw_material_id)}`"
+          :original-code="qrTarget.batch_code"
+          :product-name="qrProduct?.name"
+          :product-code="qrProduct?.code"
           :file-name="`qr-bahan-${qrTarget.batch_code}`"
         />
       </div>
@@ -339,17 +357,86 @@ async function cancelDraft(row: RawMaterialBatchData) {
       :busy="saving"
     >
       <form class="grid grid-cols-1 gap-4 py-2 sm:grid-cols-2" @submit.prevent="submitCreate">
-        <AppSelect v-model="form.supplier_id" label="Supplier" required :options="supplierOptions" :error="formErrors.supplier_id" />
-        <AppSelect v-model="form.kitchen_id" label="Dapur penerima" required :options="kitchenOptions" :error="formErrors.kitchen_id" />
-        <AppInput v-model="form.received_at" label="Tanggal/jam terima" type="datetime-local" required :error="formErrors.received_at" />
-        <AppSelect v-model="form.raw_material_id" label="Bahan makanan" required :options="materialOptions" :error="formErrors.raw_material_id" />
-        <AppInput v-model="form.batch_code" label="Kode batch" required :maxlength="100" placeholder="RB-AYAM-002" :error="formErrors.batch_code" />
-        <AppInput v-model="form.quantity" label="Jumlah" required inputmode="decimal" placeholder="10.000000" :error="formErrors.quantity" />
-        <AppInput v-model="form.temperature" label="Suhu bahan (manual, C)" inputmode="decimal" placeholder="3.20" :error="formErrors.temperature" />
-        <AppInput v-model="form.expired_date" label="Expired date" type="date" :error="formErrors.expired_date" />
-        <AppInput v-model="form.condition" label="Kondisi bahan" :maxlength="100" placeholder="GOOD" :error="formErrors.condition" />
-        <AppInput v-model="form.photo" label="Referensi foto kondisi" :maxlength="1024" placeholder="example/receiving/photo.jpg" :error="formErrors.photo" />
-        <AppInput v-model="form.qr_code" class="sm:col-span-2" label="Payload QR batch" :maxlength="255" :placeholder="qrPreview" hint="Kosongkan untuk memakai QR-&lt;kode batch&gt;. QR dirender/print di frontend." :error="formErrors.qr_code" />
+        <AppSelect
+          v-model="form.supplier_id"
+          label="Supplier"
+          required
+          :options="supplierOptions"
+          :error="formErrors.supplier_id"
+        />
+        <AppSelect
+          v-model="form.kitchen_id"
+          label="Dapur penerima"
+          required
+          :options="kitchenOptions"
+          :error="formErrors.kitchen_id"
+        />
+        <AppInput
+          v-model="form.received_at"
+          label="Tanggal/jam terima"
+          type="datetime-local"
+          required
+          :error="formErrors.received_at"
+        />
+        <AppSelect
+          v-model="form.raw_material_id"
+          label="Bahan makanan"
+          required
+          :options="materialOptions"
+          :error="formErrors.raw_material_id"
+        />
+        <AppInput
+          v-model="form.batch_code"
+          label="Kode batch"
+          required
+          :maxlength="100"
+          placeholder="RB-AYAM-002"
+          :error="formErrors.batch_code"
+        />
+        <AppInput
+          v-model="form.quantity"
+          label="Jumlah"
+          required
+          inputmode="decimal"
+          placeholder="10.000000"
+          :error="formErrors.quantity"
+        />
+        <AppInput
+          v-model="form.temperature"
+          label="Suhu bahan (manual, C)"
+          inputmode="decimal"
+          placeholder="3.20"
+          :error="formErrors.temperature"
+        />
+        <AppInput
+          v-model="form.expired_date"
+          label="Expired date"
+          type="date"
+          :error="formErrors.expired_date"
+        />
+        <AppInput
+          v-model="form.condition"
+          label="Kondisi bahan"
+          :maxlength="100"
+          placeholder="GOOD"
+          :error="formErrors.condition"
+        />
+        <AppInput
+          v-model="form.photo"
+          label="Referensi foto kondisi"
+          :maxlength="1024"
+          placeholder="example/receiving/photo.jpg"
+          :error="formErrors.photo"
+        />
+        <AppInput
+          v-model="form.qr_code"
+          class="sm:col-span-2"
+          label="Payload QR batch"
+          :maxlength="255"
+          :placeholder="qrPreview"
+          hint="Kosongkan untuk memakai QR-&lt;kode batch&gt;. QR dirender/print di frontend."
+          :error="formErrors.qr_code"
+        />
       </form>
 
       <template #footer>
@@ -361,5 +448,3 @@ async function cancelDraft(row: RawMaterialBatchData) {
     </AppModal>
   </div>
 </template>
-
-

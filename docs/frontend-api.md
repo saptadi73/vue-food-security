@@ -48,7 +48,7 @@ Perbedaan host atau port berarti origin berbeda. CORS bukan autentikasi.
 | `X-Correlation-ID` | Request opsional | Menghubungkan request satu aktivitas; dipotong maksimal 128 karakter |
 | `X-Request-ID` | Response | UUID baru setiap request; tersedia untuk JavaScript melalui CORS |
 | `Content-Type: application/json` | Response API | Format envelope |
-| `Cache-Control: no-store` | Response `/ready`, `/health/database`, `/auth/*`, `/holding-rules*`, `/alarm-rules*`, `/alarms*`, `/device-sessions*`, `/devices*`, `/device-bindings*`, `/telemetry*`, `/dashboard*`, `/notifications*`, `/kitchens*`, `/storages*`, `/storage-zones*`, `/suppliers*`, `/raw-materials*`, `/supplier-materials*`, `/schools*`, `/vehicles*`, `/drivers*`, `/receivings*`, `/raw-material-batches*`, `/food-items*`, `/recipes*`, `/production-batches*`, `/packages*`, `/packaging-types*`, `/deliveries*`, `/complaints*`, `/recalls*`, `/traceability*`, `/school-receivings*`, `/consumptions*` | Respons tidak boleh disimpan cache |
+| `Cache-Control: no-store` | Response `/ready`, `/health/database`, `/auth/*`, `/holding-rules*`, `/alarm-rules*`, `/alarms*`, `/device-sessions*`, `/devices*`, `/device-bindings*`, `/telemetry*`, `/mqtt/*`, `/dashboard*`, `/notifications*`, `/kitchens*`, `/storages*`, `/storage-zones*`, `/suppliers*`, `/raw-materials*`, `/supplier-materials*`, `/schools*`, `/vehicles*`, `/drivers*`, `/receivings*`, `/raw-material-batches*`, `/food-items*`, `/recipes*`, `/production-batches*`, `/packages*`, `/packaging-types*`, `/deliveries*`, `/complaints*`, `/recalls*`, `/traceability*`, `/school-receivings*`, `/consumptions*` | Respons tidak boleh disimpan cache |
 | `Content-Type: application/json` | Request POST autentikasi | Body JSON wajib; bukan form OAuth |
 | `Authorization: Bearer <access_token>` | Request `/auth/me` | Access JWT dengan sesi aktif |
 | `Retry-After` | Response 429 autentikasi | Detik sebelum mencoba lagi; diekspos lewat CORS |
@@ -169,6 +169,8 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/device-sessions` | Daftar sesi perangkat | Tidak ada; filter/pagination | 200 |
 | GET | `/api/v1/device-sessions/{session_id}` | Detail sesi perangkat | Tidak ada | 200 |
 | POST | `/api/v1/device-sessions/{session_id}/end` | Catat akhir sesi | disconnected_at | 200 |
+| GET | `/api/v1/mqtt/topics` | Daftar topic MQTT tersimpan | Tidak ada; topic_prefix/pagination | 200 |
+| GET | `/api/v1/mqtt/events` | Daftar event MQTT tersimpan | Tidak ada; topic/status/waktu/pagination | 200 |
 | GET | `/api/v1/devices` | Daftar perangkat | Tidak ada; filter/pagination/zone | 200 |
 | POST | `/api/v1/devices` | Buat perangkat | DeviceInput | 201 |
 | GET | `/api/v1/devices/{identifier}` | Detail perangkat | Tidak ada | 200 |

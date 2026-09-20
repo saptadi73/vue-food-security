@@ -59,6 +59,9 @@ Login mengirim field `tenant`, bukan wajib `tenant_id`:
 
 - Dashboard operasional, suhu storage, fleet, holding, recall, notification.
 - Master CRUD: kitchen, storage, zone/rak, supplier, raw material, school, vehicle, driver, food item, recipe, packaging type, device, device binding.
+- Monitoring MQTT: halaman **Binding MQTT Armada** (`/monitoring/mqtt-bindings`)
+  menampilkan topic dan event yang sudah tersimpan, kemudian membuat Device GPS
+  dan binding ke armada. Live MQTT worker tetap bergantung pada backend.
 - Raw material receiving form, accepted batch list, dan QR label bahan.
 - Production batch screen untuk rencana cooking, start produksi/pemakaian bahan dengan cek stok FEFO, detail bahan, suhu inti dan selesai masak.
 - Package allocation, holding start/update/release/discard, QR label client-side, dan delivery manifest/depart/complete/cancel.
@@ -93,7 +96,6 @@ npm run dev
 ```sh
 npm run build
 ```
-
 
 
 

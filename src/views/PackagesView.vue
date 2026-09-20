@@ -13,6 +13,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import QrCodeView from '@/components/qr/QrCodeView.vue'
 import PackageSummary from '@/components/domain/PackageSummary.vue'
 import { fsos, isApiError } from '@/api'
+import { mastersApi } from '@/api/modules/masters'
 import type { AllocationData, PackageData } from '@/api/modules/operations'
 import type { OffsetPage } from '@/api/types'
 import { usePaginatedList } from '@/composables/usePaginatedList'
@@ -30,6 +31,7 @@ const batchId = ref('')
 const productionOptions = ref<SelectOption[]>([])
 const productionLoading = ref(false)
 const qrTarget = ref<PackageData | null>(null)
+const qrProduct = ref<{ name: string; code: string } | null>(null)
 const detailTarget = ref<PackageData | null>(null)
 const createOpen = ref(false)
 
@@ -91,7 +93,9 @@ async function loadProductionOptions() {
     } catch {
       // Kompatibilitas dengan backend lama yang belum menerima filter status.
       const page = await fsos.operations.productionBatches.list({ offset: 0, limit: 20 })
-      rows = (page.items as unknown as Record<string, unknown>[]).filter((row) => row.status === 'COMPLETED')
+      rows = (page.items as unknown as Record<string, unknown>[]).filter(
+        (row) => row.status === 'COMPLETED',
+      )
     }
     productionOptions.value = rows.map((row) => {
       const batchCode = String(row.batch_code ?? 'Tanpa kode')
@@ -129,9 +133,24 @@ function applyFilter() {
   void loadAllocation()
 }
 
+async function openQr(row: PackageData) {
+  qrTarget.value = row
+  qrProduct.value = null
+  try {
+    const production = await fsos.operations.productionBatches.detail(row.production_batch_id)
+    const product = await mastersApi.foodItems.detail(production.menu)
+    if (qrTarget.value?.package_id === row.package_id) {
+      qrProduct.value = { name: product.food_name, code: product.food_code }
+    }
+  } catch {
+    /* Label tetap dapat dicetak dengan kode paket saat referensi produk tidak tersedia. */
+  }
+}
+
 function showQrFromDetail() {
-  qrTarget.value = detailTarget.value
+  const target = detailTarget.value
   detailTarget.value = null
+  if (target) void openQr(target)
 }
 
 async function openCreate() {
@@ -257,7 +276,7 @@ watch(
   async (value) => {
     if (typeof value !== 'string') return
     try {
-      qrTarget.value = await fsos.packages.detail(value)
+      await openQr(await fsos.packages.detail(value))
     } catch {
       /* diabaikan: paket mungkin milik tenant lain */
     }
@@ -428,7 +447,7 @@ onMounted(() => {
             class="grid size-8 place-items-center rounded-lg text-surface-400 transition hover:bg-surface-100 hover:text-brand-600 dark:hover:bg-surface-800"
             aria-label="Tampilkan QR"
             title="Buat dan cetak QR"
-            @click="qrTarget = row"
+            @click="openQr(row)"
           >
             <Icon icon="lucide:qr-code" :width="15" :height="15" />
           </button>
@@ -457,6 +476,9 @@ onMounted(() => {
           :value="qrTarget.qr_payload"
           :caption="qrTarget.package_code"
           :subcaption="`Paket #${qrTarget.package_number} · ${shortId(qrTarget.package_id)}`"
+          :original-code="qrTarget.package_code"
+          :product-name="qrProduct?.name"
+          :product-code="qrProduct?.code"
           :file-name="`qr-${qrTarget.package_code}`"
         />
       </div>
@@ -541,4 +563,3 @@ onMounted(() => {
     </AppModal>
   </div>
 </template>
-

@@ -1,5 +1,17 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Halaman discovery dan binding MQTT armada
+
+- Frontend menambahkan halaman `/monitoring/mqtt-bindings` untuk alur topic →
+  event → Device GPS → binding ke armada aktif.
+- Halaman memakai `GET /api/v1/mqtt/topics` untuk daftar topic dan
+  `GET /api/v1/mqtt/events?topic=...` untuk daftar event pada topic terpilih.
+- Setelah event dipilih, frontend membuat Device ACTIVE dengan `device_uuid`
+  valid dari payload bila tersedia dan `mqtt_topic` dari topic terpilih, lalu
+  membuat binding melalui `POST /api/v1/device-bindings`.
+- Endpoint discovery masih read-only terhadap `mqtt_message_log`; halaman ini
+  belum menerima live topic karena MQTT worker backend belum aktif.
+
 ## 2026-09-17 - Routing jalan fleet Google Routes API
 
 - Estimasi pada create/depart delivery dan `GET /api/v1/deliveries/{identifier}/tracking` sekarang hanya memakai Google Routes API `computeRouteMatrix`, tanpa Mapbox, OSRM atau Haversine.

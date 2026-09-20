@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 import { Icon } from '@iconify/vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { useToastStore } from '@/stores/toast'
-import { copyToClipboard } from '@/utils/format'
+import { copyToClipboard, formatDateTime } from '@/utils/format'
 
 const props = withDefaults(
   defineProps<{
@@ -12,6 +12,9 @@ const props = withDefaults(
     value: string
     caption?: string
     subcaption?: string
+    originalCode?: string
+    productName?: string
+    productCode?: string
     size?: number
     /** Tingkat koreksi error; M cukup untuk label cetak standar. */
     errorCorrection?: 'L' | 'M' | 'Q' | 'H'
@@ -95,6 +98,13 @@ function print() {
 
   const caption = escapeHtml(props.caption ?? '')
   const subcaption = escapeHtml(props.subcaption ?? '')
+  const originalCode = escapeHtml(props.originalCode ?? props.caption ?? props.value)
+  const product = escapeHtml(
+    [props.productName, props.productCode ? `(${props.productCode})` : '']
+      .filter(Boolean)
+      .join(' ') || originalCode,
+  )
+  const printedAt = escapeHtml(formatDateTime(new Date().toISOString()))
   const value = escapeHtml(props.value)
   const fileName = escapeHtml(props.fileName)
 
@@ -107,15 +117,23 @@ function print() {
       body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
       .label{width:${props.labelWidthMm}mm;height:${props.labelHeightMm}mm;padding:7mm 6mm;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}
       .title{font-size:20pt;font-weight:700;line-height:1.1;margin-bottom:4mm;max-width:88mm;overflow-wrap:anywhere}
-      img{display:block;width:78mm;height:78mm;image-rendering:auto}
+      img{display:block;width:68mm;height:68mm;image-rendering:auto}
       .subcaption{font-size:12pt;font-weight:600;line-height:1.2;margin-top:4mm;max-width:88mm;overflow-wrap:anywhere}
-      .code{font-family:"Courier New",monospace;font-size:10pt;line-height:1.25;margin-top:3mm;max-width:88mm;overflow-wrap:anywhere}
+      .details{width:88mm;margin-top:4mm;border-top:1px solid #000;padding-top:2mm;text-align:left;font-size:10pt;line-height:1.35}
+      .details div{display:grid;grid-template-columns:24mm 1fr;gap:2mm;margin-bottom:1mm}
+      .details strong{font-weight:700}
+      .code{font-family:"Courier New",monospace;font-size:8pt;overflow-wrap:anywhere}
       @media print{html,body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     </style></head><body><div class="label">
       <div class="title">${caption}</div>
       <img src="${dataUrl.value}" alt="QR" />
       <div class="subcaption">${subcaption}</div>
-      <div class="code">${value}</div>
+      <div class="details">
+        <div><strong>Kode asli</strong><span>${originalCode}</span></div>
+        <div><strong>Produk</strong><span>${product}</span></div>
+        <div><strong>Dicetak</strong><span>${printedAt}</span></div>
+        <div><strong>Payload QR</strong><span class="code">${value}</span></div>
+      </div>
     </div></body></html>`)
   doc.close()
 
@@ -156,6 +174,12 @@ function print() {
       <p v-if="caption" class="text-sm font-bold text-surface-900 dark:text-white">{{ caption }}</p>
       <p v-if="subcaption" class="text-xs text-surface-500 dark:text-surface-400">
         {{ subcaption }}
+      </p>
+      <p
+        v-if="productName || productCode"
+        class="mt-1 text-xs text-surface-500 dark:text-surface-400"
+      >
+        {{ [productName, productCode ? `(${productCode})` : ''].filter(Boolean).join(' ') }}
       </p>
       <p
         class="mt-1.5 max-w-xs font-mono text-[11px] break-all text-surface-400 dark:text-surface-500"
