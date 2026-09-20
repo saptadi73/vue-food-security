@@ -95,6 +95,9 @@ export const endpoints = {
     complete: (id: string) => `/receivings/${id}/complete`,
     cancel: (id: string) => `/receivings/${id}/cancel`,
   },
+  uploads: {
+    receivingPhoto: () => '/uploads/receiving-photo',
+  },
   rawMaterialBatches: {
     ...collection('/raw-material-batches'),
     stock: (id: string) => `/raw-material-batches/${id}/stock`,
@@ -179,7 +182,6 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-
 
 
 

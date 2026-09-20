@@ -422,6 +422,21 @@ export const receivingsApi = {
     }),
 }
 
+export interface UploadData {
+  file_id: Uuid
+  reference: string
+  content_type: string
+  size_bytes: number
+}
+
+export const uploadsApi = {
+  receivingPhoto: (file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    return api.post<UploadData>(endpoints.uploads.receivingPhoto(), body)
+  },
+}
+
 const productionResource = createResource<ProductionBatchDetail, ProductionInput>(
   endpoints.productionBatches,
   'Batch produksi',
@@ -442,6 +457,7 @@ export const productionBatchesApi = {
 
 export const operationsApi = {
   receivings: receivingsApi,
+  uploads: uploadsApi,
   rawMaterialBatches: {
     list: (query: PageQuery & {
       receiving_id?: Uuid
@@ -490,7 +506,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 

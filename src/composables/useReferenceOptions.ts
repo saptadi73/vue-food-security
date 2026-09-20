@@ -2,6 +2,7 @@ import { ref, shallowRef } from 'vue'
 import { mastersApi, type MasterKey } from '@/api/modules/masters'
 import type { SelectOption } from '@/components/ui/AppSelect.vue'
 import { MAX_PAGE_LIMIT } from '@/config/env'
+import { useAuthStore } from '@/stores/auth'
 
 const cache = new Map<string, SelectOption[]>()
 
@@ -12,6 +13,7 @@ const cache = new Map<string, SelectOption[]>()
  * satu halaman penuh (limit maksimum 100) dan di-cache per kombinasi master/label.
  */
 export function useReferenceOptions() {
+  const auth = useAuthStore()
   const options = shallowRef<Record<string, SelectOption[]>>({})
   const loading = ref(false)
 
@@ -22,7 +24,8 @@ export function useReferenceOptions() {
     filterActive = false,
     deviceType?: string,
   ): Promise<SelectOption[]> {
-    const cacheKey = `${master}:${valueKey}:${labelKey}:${filterActive}:${deviceType ?? ''}`
+    const tenantKey = auth.identity?.tenant_id ?? 'anonymous'
+    const cacheKey = `${tenantKey}:${master}:${valueKey}:${labelKey}:${filterActive}:${deviceType ?? ''}`
     if (cache.has(cacheKey)) {
       options.value = { ...options.value, [cacheKey]: cache.get(cacheKey)! }
       return cache.get(cacheKey)!
@@ -56,7 +59,7 @@ export function useReferenceOptions() {
   function invalidate(master?: MasterKey) {
     if (!master) return cache.clear()
     for (const key of [...cache.keys()]) {
-      if (key.startsWith(`${master}:`)) cache.delete(key)
+      if (key.includes(`:${master}:`)) cache.delete(key)
     }
   }
 

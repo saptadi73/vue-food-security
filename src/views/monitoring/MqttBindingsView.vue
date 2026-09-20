@@ -34,7 +34,7 @@ const loadingEvents = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const debugResponse = ref<Record<string, unknown> | null>(null)
-const bindingPanel = ref<HTMLElement | null>(null)
+const bindingPanel = ref<{ $el?: HTMLElement } | null>(null)
 
 const vehicleOptions = computed<SelectOption[]>(() =>
   vehicles.value
@@ -67,10 +67,9 @@ const eventType = computed(() => {
 
 const mqttEvent = computed(() => typeof payload.value.event === 'string' ? payload.value.event : null)
 const mqttSensor = computed(() => typeof payload.value.sensor === 'number' ? payload.value.sensor : null)
-const deviceType = computed(() => eventType.value === 'GPS' ? 'GPS' : 'FOOD_TEMPERATURE')
 const selectedDevice = computed(() => devices.value.find((device) => device.device_uuid === selectedDeviceUuid.value) ?? null)
 const deviceOptions = computed<SelectOption[]>(() => devices.value
-  .filter((device) => device.status === 'ACTIVE' && device.device_type === deviceType.value)
+  .filter((device) => device.status === 'ACTIVE')
   .map((device) => ({
     value: device.device_uuid,
     label: `${device.device_name} · ${device.device_type} · ${device.mqtt_topic ?? 'tanpa topic'}`,
@@ -177,7 +176,7 @@ async function chooseEvent(event: MqttEventRecord) {
   hardware.value = ''
   await loadDevicesForEvent()
   await nextTick()
-  bindingPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  bindingPanel.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function createAndBind() {
@@ -329,11 +328,11 @@ onMounted(() => {
         <div class="space-y-4">
           <AppSelect
             v-model="selectedDeviceUuid"
-            label="Device aktif yang sudah ada (opsional)"
+            label="Semua Device aktif yang sudah ada (opsional)"
             :options="deviceOptions"
             :loading="loadingDevices"
             placeholder="Pilih Device atau kosongkan untuk membuat baru"
-            hint="Device yang dipilih akan diperbarui topic dan selector event-nya."
+            hint="Semua tipe Device ditampilkan; device yang dipilih akan diperbarui topic dan selector event-nya."
           />
           <div v-if="selectedDevice" class="rounded-lg border border-brand-300 bg-brand-50 p-3 text-xs text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
             Device existing terpilih: <strong>{{ selectedDevice.device_name }}</strong>. Tidak akan dibuat duplikat.

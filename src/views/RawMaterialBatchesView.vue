@@ -45,7 +45,7 @@ const form = ref({
   temperature: '',
   condition: 'GOOD',
   expired_date: '',
-  photo: '',
+  photo: null as File | null,
   qr_code: '',
 })
 
@@ -119,7 +119,7 @@ async function openCreate() {
     temperature: '',
     condition: 'GOOD',
     expired_date: '',
-    photo: '',
+    photo: null,
     qr_code: '',
   }
   ;[supplierOptions.value, kitchenOptions.value, materialOptions.value] = await Promise.all([
@@ -147,6 +147,11 @@ async function submitCreate() {
   saving.value = true
   formErrors.value = {}
   try {
+    let photoReference: string | null = null
+    if (form.value.photo) {
+      const uploaded = await fsos.operations.uploads.receivingPhoto(form.value.photo)
+      photoReference = uploaded.reference
+    }
     const receiving = await fsos.operations.receivings.create({
       supplier_id: form.value.supplier_id!,
       kitchen_id: form.value.kitchen_id!,
@@ -158,7 +163,7 @@ async function submitCreate() {
           quantity: String(form.value.quantity),
           temperature: form.value.temperature ? String(form.value.temperature) : null,
           condition: form.value.condition.trim() || null,
-          photo: form.value.photo.trim() || null,
+          photo: photoReference,
           expired_date: form.value.expired_date || null,
           qr_code: qrPreview.value,
         },
@@ -421,13 +426,24 @@ async function cancelDraft(row: RawMaterialBatchData) {
           placeholder="GOOD"
           :error="formErrors.condition"
         />
-        <AppInput
-          v-model="form.photo"
-          label="Referensi foto kondisi"
-          :maxlength="1024"
-          placeholder="example/receiving/photo.jpg"
-          :error="formErrors.photo"
-        />
+        <div class="w-full">
+          <label class="mb-1.5 block text-xs font-semibold text-surface-700 dark:text-surface-300">
+            Foto kondisi bahan
+          </label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            class="input-base file:mr-3 file:border-0 file:bg-transparent file:text-xs file:font-semibold"
+            @change="(event) => { form.photo = (event.target as HTMLInputElement).files?.[0] ?? null }"
+          />
+          <p class="mt-1.5 text-xs text-surface-500 dark:text-surface-400">
+            Opsional. JPEG, PNG, atau WebP; maksimal 10 MiB. File diunggah saat menyimpan.
+            <span v-if="form.photo" class="text-emerald-600 dark:text-emerald-400">{{ form.photo.name }}</span>
+          </p>
+          <p v-if="formErrors.photo" class="mt-1.5 text-xs text-rose-600 dark:text-rose-400">
+            {{ formErrors.photo }}
+          </p>
+        </div>
         <AppInput
           v-model="form.qr_code"
           class="sm:col-span-2"

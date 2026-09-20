@@ -6,7 +6,7 @@ import { apiTrace } from './trace'
 import type { ApiEnvelope, AuthTokens } from './types'
 
 export interface RequestOptions {
-  /** Body JSON; otomatis di-serialize. */
+  /** Body JSON atau FormData; FormData dikirim tanpa serialisasi JSON. */
   body?: unknown
   /** Kirim Authorization bearer. Default true. */
   auth?: boolean
@@ -81,7 +81,8 @@ async function rawRequest<T>(
     'X-Correlation-ID': correlationId.slice(0, 128),
     ...options.headers,
   }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+  if (options.body !== undefined && !isFormData) headers['Content-Type'] = 'application/json'
   if (options.auth !== false && tokenStore.accessToken) {
     headers.Authorization = `Bearer ${tokenStore.accessToken}`
   }
@@ -97,7 +98,11 @@ async function rawRequest<T>(
       credentials: 'omit',
       cache: 'no-store',
       signal: controller.signal,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined
+        ? undefined
+        : isFormData
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
     })
   } catch (cause) {
     clearTimeout(timer)
