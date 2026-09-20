@@ -13,9 +13,11 @@ import { env } from '@/config/env'
 import type { DeviceInput, Vehicle } from '@/api/modules/masters'
 import type { MqttEventRecord, MqttTopicRecord } from '@/api/modules/telemetry'
 import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, shortId } from '@/utils/format'
 
 const toast = useToastStore()
+const authStore = useAuthStore()
 const topics = ref<MqttTopicRecord[]>([])
 const events = ref<MqttEventRecord[]>([])
 const vehicles = ref<Vehicle[]>([])
@@ -70,6 +72,7 @@ async function loadTopics() {
     state: 'loading',
     method: 'GET',
     endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+    session_tenant_id: authStore.identity?.tenant_id ?? null,
   }
   try {
     const page = await fsos.mqtt.topics({ limit: 100 })
@@ -79,6 +82,7 @@ async function loadTopics() {
       state: 'success',
       method: 'GET',
       endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+      session_tenant_id: authStore.identity?.tenant_id ?? null,
       item_count: page.items.length,
       topics: page.items.map((item) => item.topic),
       next_offset: page.next_offset,
@@ -93,6 +97,7 @@ async function loadTopics() {
           state: 'error',
           method: cause.method,
           endpoint: `${env.apiBase}${cause.path}`,
+          session_tenant_id: authStore.identity?.tenant_id ?? null,
           status: cause.status,
           code: cause.code,
           message: cause.message,
@@ -105,6 +110,7 @@ async function loadTopics() {
           state: 'error',
           method: 'GET',
           endpoint: `${env.apiBase}/mqtt/topics?limit=100`,
+          session_tenant_id: authStore.identity?.tenant_id ?? null,
           message: cause instanceof Error ? cause.message : String(cause),
         }
     toast.fromError(cause, 'Gagal memuat topic MQTT')
