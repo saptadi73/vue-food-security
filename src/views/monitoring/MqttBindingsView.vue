@@ -217,10 +217,23 @@ async function createAndBind() {
       device = await fsos.masters.devices.create(input)
     }
     if (eventType.value === 'GPS' && selectedVehicle.value) {
-      await fsos.masters.deviceBindings.create({
-        device_id: device.device_id,
-        vehicle_id: selectedVehicle.value,
-      })
+      const bindings = await fsos.masters.deviceBindings.list({ device_id: device.device_id, limit: 100 })
+      const currentBinding = bindings.items.find((binding) => binding.vehicle_id === selectedVehicle.value)
+      if (!currentBinding) {
+        const otherBinding = bindings.items[0]
+        if (otherBinding) {
+          await fsos.masters.deviceBindings.update(otherBinding.binding_id, {
+            device_id: device.device_id,
+            vehicle_id: selectedVehicle.value,
+            expected_version: otherBinding.version,
+          })
+        } else {
+          await fsos.masters.deviceBindings.create({
+            device_id: device.device_id,
+            vehicle_id: selectedVehicle.value,
+          })
+        }
+      }
     }
     toast.success(selectedDevice.value
       ? 'Device MQTT berhasil diperbarui dan di-binding ke event'
