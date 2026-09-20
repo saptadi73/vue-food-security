@@ -85,6 +85,17 @@ const PACKAGING_MATERIAL_OPTIONS: SelectOption[] = [
   { value: 'OTHER', label: 'Lainnya' },
 ]
 
+const VEHICLE_TYPE_OPTIONS: SelectOption[] = [
+  { value: 'MOTORCYCLE', label: 'Sepeda motor' },
+  { value: 'CAR', label: 'Mobil' },
+  { value: 'VAN', label: 'Van' },
+  { value: 'PICKUP', label: 'Pick-up' },
+  { value: 'TRUCK', label: 'Truk' },
+  { value: 'REFRIGERATED_TRUCK', label: 'Truk berpendingin' },
+  { value: 'INSULATED_BOX', label: 'Box insulated' },
+  { value: 'OTHER', label: 'Lainnya' },
+]
+
 const statusField: FieldDef = {
   key: 'status',
   label: 'Status',
@@ -593,7 +604,13 @@ export const masterRegistry: Record<string, MasterDefinition> = {
     fields: [
       { key: 'vehicle_code', label: 'Kode kendaraan', type: 'text', required: true, maxlength: 50 },
       { key: 'plate_number', label: 'Nomor polisi', type: 'text', required: true, maxlength: 30 },
-      { key: 'vehicle_type', label: 'Tipe kendaraan', type: 'text', required: true, maxlength: 50 },
+      {
+        key: 'vehicle_type',
+        label: 'Tipe kendaraan',
+        type: 'select',
+        required: true,
+        options: VEHICLE_TYPE_OPTIONS,
+      },
       {
         key: 'capacity',
         label: 'Kapasitas',
@@ -614,7 +631,7 @@ export const masterRegistry: Record<string, MasterDefinition> = {
       },
       {
         key: 'gps_device',
-        label: 'Perangkat GPS',
+        label: 'Perangkat GPS (kompatibilitas)',
         type: 'reference',
         reference: {
           master: 'devices',
@@ -623,9 +640,22 @@ export const masterRegistry: Record<string, MasterDefinition> = {
           filterActive: true,
           deviceType: 'GPS',
         },
-        hint: 'Hanya device ACTIVE bertipe GPS yang diterima backend.',
+        hint: 'Binding live tracking resmi dilakukan di halaman Binding GPS Armada. Field ini dipertahankan untuk kompatibilitas data lama.',
       },
-      ...coordinateFields,
+      {
+        key: 'latitude',
+        label: 'Latitude posisi awal',
+        type: 'decimal',
+        placeholder: '-6.200000',
+        hint: 'Opsional sebagai posisi awal/fallback; bukan lokasi live GPS.',
+      },
+      {
+        key: 'longitude',
+        label: 'Longitude posisi awal',
+        type: 'decimal',
+        placeholder: '106.800000',
+        hint: 'Isi berpasangan dengan latitude; lokasi live berasal dari sensor GPS yang dibinding.',
+      },
       statusField,
     ],
   },
