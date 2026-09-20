@@ -1,6 +1,6 @@
 ﻿# Panduan integrasi frontend FSOS
 
-Terakhir diperbarui: 2026-09-15. Versi aplikasi: 0.1.0.
+Terakhir diperbarui: 2026-09-20. Versi aplikasi: 0.1.0.
 Status: **165 operasi HTTP aktif**, termasuk CRUD empat belas master, autentikasi,
 konfigurasi rule, bukti alarm/sesi perangkat, penerimaan bahan/stok, produksi,
 pengemasan/holding, pengiriman, penerimaan sekolah, konsumsi dan complaint intake/report.
@@ -8,6 +8,9 @@ Recall start/execute/withdrawal/close, notification outbox, traceability passpor
 notifikasi dan pendukung lain masih bertahap.
 
 Dokumen ini menjelaskan implementasi yang dapat dipanggil sekarang.
+Untuk `supplier-materials`, request menggunakan UUID `supplier_id` dan
+`raw_material_id`, sedangkan tabel frontend menampilkan `supplier_name` dan
+`material_name`; UUID tidak ditujukan untuk dihafalkan pengguna.
 [Desain API](../../docs/16_API_design.md) adalah roadmap draft, bukan daftar
 endpoint aktif. Tabel database yang sudah ada belum menyediakan API CRUD.
 

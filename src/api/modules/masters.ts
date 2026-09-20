@@ -79,6 +79,10 @@ export interface SupplierMaterialInput {
 }
 export interface SupplierMaterial extends AuditFields, SupplierMaterialInput {
   supplier_material_id: Uuid
+  supplier_code: string
+  supplier_name: string
+  material_code: string
+  material_name: string
 }
 
 export interface SchoolInput {
