@@ -74,6 +74,17 @@ const RAW_MATERIAL_CATEGORY_OPTIONS: SelectOption[] = [
   { value: 'OTHER', label: 'Lainnya' },
 ]
 
+const PACKAGING_MATERIAL_OPTIONS: SelectOption[] = [
+  { value: 'PLASTIC', label: 'Plastik' },
+  { value: 'PAPER', label: 'Kertas' },
+  { value: 'CARDBOARD', label: 'Karton' },
+  { value: 'ALUMINUM', label: 'Aluminium' },
+  { value: 'GLASS', label: 'Kaca' },
+  { value: 'STAINLESS_STEEL', label: 'Stainless steel' },
+  { value: 'BIODEGRADABLE', label: 'Biodegradable' },
+  { value: 'OTHER', label: 'Lainnya' },
+]
+
 const statusField: FieldDef = {
   key: 'status',
   label: 'Status',
@@ -549,7 +560,13 @@ export const masterRegistry: Record<string, MasterDefinition> = {
     fields: [
       { key: 'code', label: 'Kode', type: 'text', required: true, maxlength: 50 },
       { key: 'name', label: 'Nama', type: 'text', required: true, maxlength: 200 },
-      { key: 'material', label: 'Material', type: 'text', maxlength: 100 },
+      {
+        key: 'material',
+        label: 'Material',
+        type: 'select',
+        options: PACKAGING_MATERIAL_OPTIONS,
+        hint: 'Pilih bahan fisik kemasan. Gunakan Lainnya jika belum tersedia.',
+      },
       { key: 'volume', label: 'Volume (ml)', type: 'decimal', step: '0.001' },
     ],
   },
