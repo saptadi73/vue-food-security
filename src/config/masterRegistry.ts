@@ -60,6 +60,20 @@ const STORAGE_TYPE_OPTIONS: SelectOption[] = [
   { value: 'DRY_STORAGE', label: 'DRY_STORAGE' },
 ]
 
+const RAW_MATERIAL_CATEGORY_OPTIONS: SelectOption[] = [
+  { value: 'CARBOHYDRATE', label: 'Karbohidrat / bahan pokok' },
+  { value: 'ANIMAL_PROTEIN', label: 'Protein hewani' },
+  { value: 'PLANT_PROTEIN', label: 'Protein nabati' },
+  { value: 'VEGETABLE', label: 'Sayuran' },
+  { value: 'FRUIT', label: 'Buah' },
+  { value: 'EGG', label: 'Telur' },
+  { value: 'DAIRY', label: 'Susu dan olahan' },
+  { value: 'SPICE', label: 'Bumbu dan rempah' },
+  { value: 'OIL_FAT', label: 'Minyak dan lemak' },
+  { value: 'WATER', label: 'Air' },
+  { value: 'OTHER', label: 'Lainnya' },
+]
+
 const statusField: FieldDef = {
   key: 'status',
   label: 'Status',
@@ -325,7 +339,13 @@ export const masterRegistry: Record<string, MasterDefinition> = {
     fields: [
       { key: 'material_code', label: 'Kode bahan', type: 'text', required: true, maxlength: 50 },
       { key: 'material_name', label: 'Nama bahan', type: 'text', required: true, maxlength: 200 },
-      { key: 'category', label: 'Kategori', type: 'text', maxlength: 100 },
+      {
+        key: 'category',
+        label: 'Kategori',
+        type: 'select',
+        options: RAW_MATERIAL_CATEGORY_OPTIONS,
+        hint: 'Pilih kategori operasional bahan baku. Gunakan Lainnya jika belum ada kategori yang sesuai.',
+      },
       {
         key: 'uom',
         label: 'UOM',
