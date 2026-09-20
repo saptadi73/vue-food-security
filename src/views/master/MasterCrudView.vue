@@ -93,6 +93,14 @@ function openEdit(row: Record<string, unknown>) {
 async function submit(payload: Record<string, unknown>) {
   const master = definition.value!
   const resource = resourceFor(master)
+  // MQTT binding and last_online are operational fields. They are not edited
+  // from the identity form, but PUT replaces the full device definition.
+  // Preserve existing values so editing a device cannot silently unbind it.
+  if (master.key === 'devices' && editing.value) {
+    for (const key of ['mqtt_topic', 'mqtt_event', 'mqtt_sensor', 'last_online']) {
+      payload[key] = editing.value[key] ?? null
+    }
+  }
   if (editing.value) {
     await resource.update(String(editing.value[master.idKey]), payload as never)
     toast.success(`${master.title} diperbarui`)

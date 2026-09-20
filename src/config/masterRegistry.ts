@@ -691,7 +691,7 @@ export const masterRegistry: Record<string, MasterDefinition> = {
     route: 'devices',
     title: 'Master Device IoT',
     singular: 'device IoT',
-    description: 'Daftar seluruh device IoT: GPS armada, sensor makanan, suhu storage, dan telemetry lainnya. Binding ke armada dilakukan di halaman Binding GPS Armada.',
+    description: 'Daftar identitas seluruh device IoT. Topic MQTT dan selector diatur di halaman Binding MQTT Device; lokasi GPS diatur melalui Binding GPS Armada.',
     icon: 'lucide:cpu',
     permission: 'Device.Read',
     idKey: 'device_id',
@@ -754,18 +754,6 @@ export const masterRegistry: Record<string, MasterDefinition> = {
         hint: 'Opsional. Contoh: ESP32-WROOM, DS18B20, atau GPS NEO-6M.',
       },
       {
-        key: 'mqtt_topic', label: 'MQTT topic', type: 'text', maxlength: 512, full: true,
-        hint: 'Opsional. Contoh: fsos/gps atau fsos/suhu1. Topic fsos multiplexed perlu selector event/sensor.',
-      },
-      {
-        key: 'mqtt_event', label: 'MQTT event selector', type: 'text', maxlength: 200, full: true,
-        hint: 'Opsional. Isi payload.event, misalnya Suhu Makanan, bila topic dipakai bersama banyak event.',
-      },
-      {
-        key: 'mqtt_sensor', label: 'MQTT sensor selector', type: 'number', min: 0,
-        hint: 'Opsional. Isi payload.sensor, misalnya 1, bila topic dipakai bersama banyak sensor.',
-      },
-      {
         key: 'status',
         label: 'Status',
         type: 'select',
@@ -773,7 +761,6 @@ export const masterRegistry: Record<string, MasterDefinition> = {
         defaultValue: 'REGISTERED',
         hint: 'Pilih ACTIVE agar device langsung dapat menerima telemetry MQTT.',
       },
-      { key: 'last_online', label: 'Terakhir online', type: 'datetime', hint: 'Opsional; biasanya diisi otomatis oleh telemetry.' },
     ],
   },
 
