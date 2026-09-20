@@ -78,6 +78,7 @@ export interface PackageDeliveryContextData {
 
 export interface HoldingActionInput {
   expected_version: number
+  device_uuid?: Uuid | null
 }
 
 export interface HoldingFinishInput extends HoldingActionInput {
@@ -147,6 +148,7 @@ export interface ProductionCompleteInput {
   expected_version: number
   actual_quantity: DecimalString
   initial_temperature?: DecimalString | null
+  food_sensor_device_uuid?: Uuid | null
 }
 
 export interface RawMaterialBatchData extends AuditFields {
@@ -488,7 +490,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 

@@ -33,6 +33,10 @@ const productionLoading = ref(false)
 const qrTarget = ref<PackageData | null>(null)
 const qrProduct = ref<{ name: string; code: string } | null>(null)
 const detailTarget = ref<PackageData | null>(null)
+const holdingTarget = ref<PackageData | null>(null)
+const holdingDevice = ref<string | null>(null)
+const holdingDeviceOptions = ref<SelectOption[]>([])
+const holdingOpen = ref(false)
 const createOpen = ref(false)
 
 const allocation = ref<AllocationData | null>(null)
@@ -191,11 +195,23 @@ async function packageHolding(
     if (!ok) return
   }
 
+  if (action === 'start') {
+    try {
+      const page = await mastersApi.devices.list({ limit: 100 })
+      holdingDeviceOptions.value = page.items
+        .filter((device) => device.status === 'ACTIVE' && ['FOOD_TEMPERATURE', 'TEMPERATURE', 'FOOD_SENSOR'].includes(device.device_type))
+        .map((device) => ({ value: device.device_uuid, label: `${device.device_name} · ${device.device_uuid}` }))
+      holdingTarget.value = row
+      holdingDevice.value = null
+      holdingOpen.value = true
+    } catch (error) {
+      toast.fromError(error, 'Gagal memuat sensor makanan')
+    }
+    return
+  }
+
   try {
-    if (action === 'start') {
-      await fsos.packages.startHolding(row.package_id, { expected_version: row.version })
-      toast.success('Holding dimulai', { description: row.package_code })
-    } else if (action === 'update') {
+    if (action === 'update') {
       await fsos.packages.updateHolding(row.package_id, { expected_version: row.version })
       toast.success('Status holding diperbarui', { description: row.package_code })
     } else {
@@ -210,6 +226,26 @@ async function packageHolding(
     await refreshPackageList()
   } catch (error) {
     toast.fromError(error, 'Gagal memperbarui holding paket')
+  }
+}
+
+async function submitHoldingStart() {
+  const row = holdingTarget.value
+  if (!row || saving.value) return
+  saving.value = true
+  try {
+    await fsos.packages.startHolding(row.package_id, {
+      expected_version: row.version,
+      device_uuid: holdingDevice.value,
+    })
+    toast.success('Holding dimulai', { description: row.package_code })
+    holdingOpen.value = false
+    holdingTarget.value = null
+    await refreshPackageList()
+  } catch (error) {
+    toast.fromError(error, 'Gagal memulai holding')
+  } finally {
+    saving.value = false
   }
 }
 
@@ -482,6 +518,34 @@ onMounted(() => {
           :file-name="`qr-${qrTarget.package_code}`"
         />
       </div>
+    </AppModal>
+
+    <!-- Modal detail -->
+    <AppModal
+      v-model:open="holdingOpen"
+      size="md"
+      title="Mulai holding dengan sensor"
+      icon="lucide:thermometer"
+      description="Pilih sensor makanan aktif untuk mengikat pembacaan suhu ke package ini."
+      :busy="saving"
+    >
+      <div class="space-y-4 py-2">
+        <AppInput :model-value="holdingTarget?.package_code ?? ''" label="Kode paket" readonly />
+        <AppSelect
+          v-model="holdingDevice"
+          label="Sensor makanan"
+          required
+          :options="holdingDeviceOptions"
+          placeholder="Pilih sensor aktif"
+          hint="Binding sensor berlaku untuk sesi holding package ini."
+        />
+      </div>
+      <template #footer>
+        <AppButton variant="subtle" :disabled="saving" @click="holdingOpen = false">Batal</AppButton>
+        <AppButton icon="lucide:timer" :loading="saving" :disabled="!holdingDevice" @click="submitHoldingStart">
+          Mulai Holding
+        </AppButton>
+      </template>
     </AppModal>
 
     <!-- Modal detail -->

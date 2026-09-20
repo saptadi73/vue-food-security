@@ -9,6 +9,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { fsos, isApiError } from '@/api'
+import { mastersApi } from '@/api/modules/masters'
 import type { ProductionBatchData, ProductionBatchDetail } from '@/api/modules/operations'
 import { usePaginatedList } from '@/composables/usePaginatedList'
 import { useReferenceOptions } from '@/composables/useReferenceOptions'
@@ -33,6 +34,7 @@ const startStockLoading = ref<Record<number, boolean>>({})
 const kitchenOptions = ref<SelectOption[]>([])
 const menuOptions = ref<SelectOption[]>([])
 const formErrors = ref<Record<string, string>>({})
+const foodSensorOptions = ref<SelectOption[]>([])
 
 const form = ref({
   batch_code: '',
@@ -43,6 +45,7 @@ const form = ref({
 const completeForm = ref({
   actual_quantity: '',
   initial_temperature: '',
+  food_sensor_device_uuid: null as string | null,
 })
 const startForm = ref({
   items: [
@@ -229,9 +232,22 @@ function openComplete(row: ProductionBatchData) {
   completeForm.value = {
     actual_quantity: row.actual_quantity ?? row.planned_quantity ?? '',
     initial_temperature: row.initial_temperature ?? '',
+    food_sensor_device_uuid: null,
   }
   formErrors.value = {}
   completeOpen.value = true
+  void loadFoodSensors()
+}
+
+async function loadFoodSensors() {
+  try {
+    const page = await mastersApi.devices.list({ limit: 100 })
+    foodSensorOptions.value = page.items
+      .filter((device) => device.status === 'ACTIVE' && ['FOOD_TEMPERATURE', 'TEMPERATURE', 'FOOD_SENSOR'].includes(device.device_type))
+      .map((device) => ({ value: device.device_uuid, label: `${device.device_name} · ${device.device_uuid}` }))
+  } catch (error) {
+    toast.fromError(error, 'Gagal memuat sensor makanan')
+  }
 }
 
 async function submitComplete() {
@@ -250,6 +266,7 @@ async function submitComplete() {
       initial_temperature: completeForm.value.initial_temperature
         ? String(completeForm.value.initial_temperature)
         : null,
+      food_sensor_device_uuid: completeForm.value.food_sensor_device_uuid,
     })
     toast.success('Produksi selesai', { description: item.batch_code })
     completeOpen.value = false
@@ -422,6 +439,13 @@ async function cancelBatch(row: ProductionBatchData) {
         <AppInput :model-value="completeTarget?.batch_code ?? ''" label="Kode batch" readonly />
         <AppInput v-model="completeForm.actual_quantity" label="Hasil aktual" required inputmode="decimal" :error="formErrors.actual_quantity" />
         <AppInput v-model="completeForm.initial_temperature" label="Suhu inti makanan (C)" inputmode="decimal" :error="formErrors.initial_temperature" />
+        <AppSelect
+          v-model="completeForm.food_sensor_device_uuid"
+          label="Sensor makanan (opsional)"
+          :options="foodSensorOptions"
+          placeholder="Pilih sensor untuk batch"
+          hint="Sensor akan dibinding ke production batch dan dapat mengirim suhu aktual."
+        />
       </form>
       <template #footer>
         <AppButton variant="subtle" :disabled="saving" @click="completeOpen = false; completeTarget = null">Batal</AppButton>

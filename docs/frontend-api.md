@@ -273,7 +273,7 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/production-batches` | Daftar produksi | Tidak ada; pagination/filter | 200 |
 | GET | `/api/v1/production-batches/{identifier}` | Detail produksi | Tidak ada | 200 |
 | POST | `/api/v1/production-batches/{identifier}/start` | Mulai/pakai bahan | expected_version + items sumber stok | 200 |
-| POST | `/api/v1/production-batches/{identifier}/complete` | Catat hasil dan suhu awal | expected_version + actual_quantity + initial_temperature opsional | 200 |
+| POST | `/api/v1/production-batches/{identifier}/complete` | Catat hasil, suhu awal dan binding sensor makanan opsional | expected_version + actual_quantity + initial_temperature + food_sensor_device_uuid opsional | 200 |
 | POST | `/api/v1/production-batches/{identifier}/cancel` | Batalkan CREATED | expected_version | 200 |
 | GET | `/api/v1/raw-material-batches/{identifier}/stock-issues` | Riwayat pemakaian produksi | Tidak ada; offset/limit | 200 |
 | GET | `/api/v1/packaging-types` | Daftar jenis kemasan | Tanpa body; offset/limit | 200 |
@@ -287,7 +287,7 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/packages/{identifier}` | Detail paket + timer | Tanpa body | 200 |
 | GET | `/api/v1/packages/{identifier}/delivery-context` | Konteks manifest delivery paket | Tanpa body | 200 |
 | GET | `/api/v1/production-batches/{identifier}/packaging` | Sisa alokasi hasil | Tanpa body | 200 |
-| POST | `/api/v1/packages/{identifier}/holding/start` | Mulai holding paket | expected_version | 200 |
+| POST | `/api/v1/packages/{identifier}/holding/start` | Mulai holding paket dan binding sensor makanan opsional | expected_version + device_uuid opsional | 200 |
 | POST | `/api/v1/packages/{identifier}/holding/update` | Refresh/materialisasi expiry | expected_version | 200 |
 | POST | `/api/v1/packages/{identifier}/holding/finish` | Release/discard | expected_version + outcome | 200 |
 | POST | `/api/v1/deliveries` | Buat manifest | kitchen_id/vehicle/driver/items | 201 |
@@ -297,7 +297,7 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/deliveries/{identifier}` | Detail manifest/perjalanan | Tanpa body | 200 |
 | GET | `/api/v1/deliveries/{identifier}/tracking` | Tracking GPS/suhu terakhir dan sisa jarak/waktu | Tanpa body | 200 |
 | POST | `/api/v1/telemetry/gps` | Ingest GPS armada HTTP | vehicle_uuid, lat/lon, speed opsional | 201 |
-| POST | `/api/v1/telemetry/temperatures` | Ingest suhu device/storage HTTP | device_uuid, storage_uuid opsional, temperature/unit | 201 |
+| POST | `/api/v1/telemetry/temperatures` | Ingest suhu device/storage/food HTTP | device_uuid, storage_uuid/package_uuid/production_batch_uuid opsional, temperature/unit | 201 |
 | POST | `/api/v1/deliveries/{identifier}/depart` | Berangkat | expected_version/estimated_arrival_time | 200 |
 | POST | `/api/v1/deliveries/{identifier}/complete` | Konfirmasi perjalanan selesai | expected_version | 200 |
 | POST | `/api/v1/deliveries/{identifier}/cancel` | Batalkan CREATED | expected_version | 200 |

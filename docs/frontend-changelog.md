@@ -1,5 +1,15 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Binding sensor makanan pada production dan holding
+
+- Form complete Production Batch sekarang dapat memilih device aktif bertipe
+  `FOOD_TEMPERATURE`, `TEMPERATURE`, atau `FOOD_SENSOR` melalui field
+  `food_sensor_device_uuid`.
+- Form start holding pada halaman Paket sekarang meminta sensor makanan opsional;
+  backend membuat binding phase `HOLDING` ke package tersebut.
+- Telemetry suhu makanan dapat diarahkan ke `production_batch_uuid` atau
+  `package_uuid`, dan backend memvalidasi binding sensor aktif sebelum menyimpan.
+
 ## 2026-09-20 - Halaman discovery dan binding MQTT armada
 
 - Frontend menambahkan halaman `/monitoring/mqtt-bindings` untuk alur topic →
