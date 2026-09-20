@@ -59,7 +59,7 @@ Login mengirim field `tenant`, bukan wajib `tenant_id`:
 
 - Dashboard operasional, suhu storage, fleet, holding, recall, notification.
 - Master CRUD: kitchen, storage, zone/rak, supplier, raw material, school, vehicle, driver, food item, recipe, packaging type, device, device binding.
-- Monitoring MQTT: halaman **Binding MQTT Armada** (`/monitoring/mqtt-bindings`)
+- Monitoring MQTT: halaman **Binding MQTT Device** (`/monitoring/mqtt-bindings`)
   menampilkan topic dan event yang sudah tersimpan, kemudian membuat Device GPS
   dan binding ke armada. Event sensor suhu membuat Device sensor dengan selector
   event/sensor; live ingestion dijalankan backend secara opt-in.
@@ -100,7 +100,6 @@ npm run dev
 ```sh
 npm run build
 ```
-
 
 
 

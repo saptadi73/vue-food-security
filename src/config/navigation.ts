@@ -45,7 +45,7 @@ export const navigation: NavSection[] = [
         description: 'Koneksi perangkat IoT',
       },
       {
-        label: 'Binding MQTT Armada',
+        label: 'Binding MQTT Device',
         to: '/monitoring/mqtt-bindings',
         icon: 'lucide:radio-tower',
         permission: 'Device.Read',

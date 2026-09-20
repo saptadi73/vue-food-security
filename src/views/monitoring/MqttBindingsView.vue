@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -31,6 +31,7 @@ const loadingEvents = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const debugResponse = ref<Record<string, unknown> | null>(null)
+const bindingPanel = ref<HTMLElement | null>(null)
 
 const vehicleOptions = computed<SelectOption[]>(() =>
   vehicles.value
@@ -143,10 +144,12 @@ async function selectTopic(topic: string) {
   }
 }
 
-function chooseEvent(event: MqttEventRecord) {
+async function chooseEvent(event: MqttEventRecord) {
   selectedEvent.value = event
   deviceName.value = `GPS ${event.topic.split('/').filter(Boolean).at(-2) ?? 'MQTT'}`
   hardware.value = ''
+  await nextTick()
+  bindingPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function createAndBind() {
@@ -194,7 +197,7 @@ onMounted(() => {
 <template>
   <div class="space-y-5">
     <PageHeader
-      title="Binding MQTT Armada"
+      title="Binding MQTT Device"
       description="Pilih topic dan event MQTT, buat Device dengan selector payload, lalu hubungkan GPS ke armada."
       icon="lucide:radio-tower"
       tag="Device.Read"
@@ -245,7 +248,14 @@ onMounted(() => {
                 <p class="font-mono text-xs text-surface-500">{{ shortId(event.message_uuid) }}</p>
                 <p class="mt-1 text-sm font-semibold text-surface-900 dark:text-white">{{ formatDateTime(event.received_at) }}</p>
               </div>
-              <AppButton size="sm" variant="outline" icon="lucide:arrow-right" @click="chooseEvent(event)">Pilih event</AppButton>
+              <AppButton
+                size="sm"
+                :variant="selectedEvent?.message_uuid === event.message_uuid ? 'primary' : 'outline'"
+                icon="lucide:arrow-right"
+                @click="chooseEvent(event)"
+              >
+                {{ selectedEvent?.message_uuid === event.message_uuid ? 'Event terpilih' : 'Pilih event' }}
+              </AppButton>
             </div>
             <pre class="mt-3 max-h-40 overflow-auto rounded-lg bg-surface-950 p-3 text-xs text-surface-100">{{ JSON.stringify(event.payload_json ?? event.payload_text ?? {}, null, 2) }}</pre>
           </article>
@@ -254,7 +264,7 @@ onMounted(() => {
       </AppCard>
     </div>
 
-    <AppCard title="3. Buat Device dan binding armada" subtitle="Device dibuat ACTIVE dengan topic event yang dipilih" icon="lucide:link-2">
+    <AppCard ref="bindingPanel" title="3. Binding Device MQTT" subtitle="Buat Device ACTIVE dari topic/event yang dipilih" icon="lucide:link-2">
       <div v-if="selectedEvent" class="grid gap-4 lg:grid-cols-2">
         <div class="rounded-xl bg-surface-50 p-4 text-sm dark:bg-surface-800/60">
           <p class="font-semibold text-surface-900 dark:text-white">Event terpilih</p>

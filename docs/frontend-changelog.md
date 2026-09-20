@@ -1,5 +1,14 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Form Device dengan pilihan tipe dan keterangan field
+
+- Field `device_type` pada Master Perangkat sekarang berupa pilihan terarah:
+  `GPS`, `FOOD_TEMPERATURE`, `TEMPERATURE`, atau `HUMIDITY`.
+- `zone_id`, UUID publik, firmware, hardware, MQTT topic, selector event/sensor,
+  dan last online diberi keterangan bahwa field tersebut opsional serta contoh
+  penggunaannya. Zona hanya disarankan untuk device yang terkait storage.
+- Zona penempatan kini hanya mengambil zona aktif.
+
 ## 2026-09-20 - Debug response discovery MQTT
 
 - Halaman `/monitoring/mqtt-bindings` menampilkan debug aman untuk request
@@ -16,6 +25,11 @@
   backend membuat binding phase `HOLDING` ke package tersebut.
 - Telemetry suhu makanan dapat diarahkan ke `production_batch_uuid` atau
   `package_uuid`, dan backend memvalidasi binding sensor aktif sebelum menyimpan.
+
+## 2026-09-20 - Penamaan Binding MQTT Device
+
+- Label navigasi, judul route, dan judul halaman diubah dari **Binding MQTT Armada**
+  menjadi **Binding MQTT Device**. Fungsi binding GPS ke armada tetap tersedia.
 
 ## 2026-09-20 - Halaman discovery dan binding MQTT armada
 
