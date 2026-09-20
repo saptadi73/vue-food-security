@@ -23,6 +23,8 @@ const references = useReferenceOptions()
 const definition = computed(() => resolveMaster(String(route.params.master ?? '')))
 const parentValue = ref<string | null>(null)
 const parentOptions = ref<SelectOption[]>([])
+const supplierLabels = ref<Record<string, string>>({})
+const materialLabels = ref<Record<string, string>>({})
 
 const formOpen = ref(false)
 const editing = ref<Record<string, unknown> | null>(null)
@@ -53,11 +55,24 @@ async function loadParentOptions() {
   parentOptions.value = [{ value: null, label: `Semua ${filter.label.toLowerCase()}` }, ...options]
 }
 
+async function loadSupplierMaterialLabels() {
+  supplierLabels.value = {}
+  materialLabels.value = {}
+  if (definition.value?.key !== 'supplierMaterials') return
+  const [suppliers, materials] = await Promise.all([
+    references.load('suppliers', 'supplier_id', 'supplier_name', true),
+    references.load('rawMaterials', 'raw_material_id', 'material_name', true),
+  ])
+  supplierLabels.value = Object.fromEntries(suppliers.map((item) => [String(item.value), item.label]))
+  materialLabels.value = Object.fromEntries(materials.map((item) => [String(item.value), item.label]))
+}
+
 watch(
   definition,
   async (value) => {
     if (!value) return
     await loadParentOptions()
+    await loadSupplierMaterialLabels()
     list.reset()
   },
   { immediate: true },
@@ -119,7 +134,13 @@ async function removeRow(row: Record<string, unknown>) {
 const DATE_KEYS = new Set(['updated_at', 'created_at', 'last_online', 'deleted_at'])
 const ID_SUFFIX = /_id$|_uuid$/
 
-function renderCell(column: { key: string }, value: unknown) {
+function renderCell(column: { key: string }, value: unknown, row: Record<string, unknown>) {
+  if (column.key === 'supplier_name' && !value) {
+    value = supplierLabels.value[String(row.supplier_id ?? '')]
+  }
+  if (column.key === 'material_name' && !value) {
+    value = materialLabels.value[String(row.raw_material_id ?? '')]
+  }
   if (value === null || value === undefined || value === '') return '—'
   if (DATE_KEYS.has(column.key)) return formatDateTime(String(value))
   if (ID_SUFFIX.test(column.key)) return shortId(String(value))
@@ -178,11 +199,11 @@ function renderCell(column: { key: string }, value: unknown) {
     >
       <template
         v-for="column in definition.columns"
-        #[`cell-${column.key}`]="{ value }"
+        #[`cell-${column.key}`]="{ value, row }"
         :key="column.key"
       >
         <AppBadge v-if="column.key === 'status'" :status="String(value ?? '')" />
-        <span v-else :title="String(value ?? '')">{{ renderCell(column, value) }}</span>
+        <span v-else :title="String(value ?? '')">{{ renderCell(column, value, row) }}</span>
       </template>
 
       <template #actions="{ row }">

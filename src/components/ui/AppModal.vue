@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import { onKeyStroke, useScrollLock } from '@vueuse/core'
+import { useScrollLock } from '@vueuse/core'
 
 const props = withDefaults(
   defineProps<{
@@ -36,10 +36,6 @@ function close() {
   emit('close')
 }
 
-onKeyStroke('Escape', () => {
-  if (open.value) close()
-})
-
 watch(
   open,
   async (value) => {
@@ -65,7 +61,6 @@ watch(
         v-if="open"
         class="fixed inset-0 z-100 flex items-end justify-center overflow-y-auto bg-surface-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
         role="presentation"
-        @click.self="close"
       >
         <Transition
           appear
