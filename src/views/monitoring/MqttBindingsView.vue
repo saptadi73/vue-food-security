@@ -349,7 +349,7 @@ onMounted(() => {
           <AppButton block icon="lucide:link-2" :loading="saving" :disabled="(eventType === 'GPS' && !selectedVehicle) || (!selectedDevice && !deviceName.trim())" @click="createAndBind">
             {{ selectedDevice ? 'Binding Device Terpilih' : eventType === 'GPS' ? 'Buat Device & Binding Armada' : 'Buat Device Sensor' }}
           </AppButton>
-          <p class="text-xs text-surface-500">Jika pembuatan Device berhasil tetapi binding gagal, Device tetap tercatat dan dapat diperbaiki dari Master Perangkat/Binding.</p>
+          <p class="text-xs text-surface-500">Jika pembuatan Device berhasil tetapi binding GPS gagal, Device tetap tercatat dan dapat diperbaiki dari Master Device IoT/Binding GPS Armada.</p>
         </div>
       </div>
       <EmptyState v-else icon="lucide:mouse-pointer-click" title="Pilih event terlebih dahulu" description="Pilih event dari daftar di atas untuk mengisi topic dan identitas device." />

@@ -1,5 +1,13 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Klarifikasi Master Device IoT dan Binding GPS Armada
+
+- `/master/devices` kini berlabel **Device IoT** dan menjelaskan bahwa halaman
+  ini menampung semua device GPS, sensor makanan, sensor storage, dan telemetry.
+- `/master/device-bindings` kini berlabel **Binding GPS Armada** dengan field
+  `Device GPS` dan `Armada/Kendaraan`; halaman ini khusus relasi GPS-armada untuk
+  live tracking. Sensor suhu tidak dibinding ke armada di halaman ini.
+
 ## 2026-09-20 - Pilih Device existing sebelum membuat binding MQTT
 
 - Panel binding MQTT sekarang memuat Device ACTIVE yang sudah ada sesuai tipe

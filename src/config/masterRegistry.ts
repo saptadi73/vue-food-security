@@ -14,7 +14,7 @@ export interface FieldDef {
   placeholder?: string
   options?: SelectOption[]
   /** Untuk type 'reference': master lain yang menjadi sumber pilihan. */
-  reference?: { master: MasterKey; valueKey: string; labelKey: string; filterActive?: boolean }
+  reference?: { master: MasterKey; valueKey: string; labelKey: string; filterActive?: boolean; deviceType?: string }
   /** Tidak dapat diubah setelah create (dikirim apa adanya pada PUT). */
   immutable?: boolean
   maxlength?: number
@@ -584,6 +584,7 @@ export const masterRegistry: Record<string, MasterDefinition> = {
           valueKey: 'device_id',
           labelKey: 'device_name',
           filterActive: true,
+          deviceType: 'GPS',
         },
         hint: 'Hanya device ACTIVE bertipe GPS yang diterima backend.',
       },
@@ -621,9 +622,9 @@ export const masterRegistry: Record<string, MasterDefinition> = {
   devices: {
     key: 'devices',
     route: 'devices',
-    title: 'Perangkat',
-    singular: 'perangkat',
-    description: 'Master device IoT (suhu, GPS) dan penempatannya pada zona.',
+    title: 'Master Device IoT',
+    singular: 'device IoT',
+    description: 'Daftar seluruh device IoT: GPS armada, sensor makanan, suhu storage, dan telemetry lainnya. Binding ke armada dilakukan di halaman Binding GPS Armada.',
     icon: 'lucide:cpu',
     permission: 'Device.Read',
     idKey: 'device_id',
@@ -712,24 +713,25 @@ export const masterRegistry: Record<string, MasterDefinition> = {
   'device-bindings': {
     key: 'deviceBindings',
     route: 'device-bindings',
-    title: 'Binding Perangkat',
-    singular: 'binding',
-    description: 'Hubungan perangkat GPS aktif dengan kendaraan aktif.',
+    title: 'Binding GPS Armada',
+    singular: 'binding GPS armada',
+    description: 'Hubungkan satu Device GPS aktif ke satu Armada/Kendaraan aktif untuk live tracking. Sensor makanan dan sensor storage tidak dibinding di halaman ini.',
     icon: 'lucide:plug',
     permission: 'DeviceBinding.Read',
     idKey: 'binding_id',
     identityKey: 'binding_id',
     searchKeys: ['device_id', 'vehicle_id'],
     columns: [
-      { key: 'device_id', label: 'Perangkat', mono: true },
-      { key: 'vehicle_id', label: 'Kendaraan', mono: true },
+      { key: 'device_id', label: 'Device GPS', mono: true },
+      { key: 'vehicle_id', label: 'Armada/Kendaraan', mono: true },
       versionColumn,
       updatedColumn,
     ],
     fields: [
       {
         key: 'device_id',
-        label: 'Perangkat GPS',
+        label: 'Device GPS',
+        hint: 'Wajib memilih Device ACTIVE bertipe GPS. Device sensor suhu tidak berlaku untuk binding armada.',
         type: 'reference',
         required: true,
         reference: {
@@ -741,7 +743,8 @@ export const masterRegistry: Record<string, MasterDefinition> = {
       },
       {
         key: 'vehicle_id',
-        label: 'Kendaraan',
+        label: 'Armada/Kendaraan',
+        hint: 'Wajib memilih armada aktif yang akan dipantau live tracking.',
         type: 'reference',
         required: true,
         reference: {

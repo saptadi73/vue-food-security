@@ -20,8 +20,9 @@ export function useReferenceOptions() {
     valueKey: string,
     labelKey: string,
     filterActive = false,
+    deviceType?: string,
   ): Promise<SelectOption[]> {
-    const cacheKey = `${master}:${valueKey}:${labelKey}:${filterActive}`
+    const cacheKey = `${master}:${valueKey}:${labelKey}:${filterActive}:${deviceType ?? ''}`
     if (cache.has(cacheKey)) {
       options.value = { ...options.value, [cacheKey]: cache.get(cacheKey)! }
       return cache.get(cacheKey)!
@@ -30,7 +31,11 @@ export function useReferenceOptions() {
     loading.value = true
     try {
       // Opsi dropdown cukup satu halaman kecil; hindari request besar pada backend lama.
-      const page = await mastersApi[master].list({ offset: 0, limit: Math.min(MAX_PAGE_LIMIT, 20) })
+      const page = await mastersApi[master].list({
+        offset: 0,
+        limit: Math.min(MAX_PAGE_LIMIT, 20),
+        ...(deviceType ? { device_type: deviceType } : {}),
+      })
       const rows = (page.items ?? []) as unknown as Record<string, unknown>[]
       const mapped = rows
         .filter((row) => (filterActive && 'status' in row ? row.status === 'ACTIVE' : true))

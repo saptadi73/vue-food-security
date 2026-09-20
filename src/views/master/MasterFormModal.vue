@@ -37,8 +37,8 @@ async function hydrate() {
     const raw = props.record?.[field.key]
     form[field.key] = raw === undefined || raw === null ? defaultFor(field) : raw
     if (field.type === 'reference' && field.reference) {
-      const { master, valueKey, labelKey, filterActive } = field.reference
-      refOptions[field.key] = await references.load(master, valueKey, labelKey, filterActive)
+      const { master, valueKey, labelKey, filterActive, deviceType } = field.reference
+      refOptions[field.key] = await references.load(master, valueKey, labelKey, filterActive, deviceType)
     }
   }
 }

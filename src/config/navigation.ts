@@ -129,8 +129,8 @@ export const navigation: NavSection[] = [
       { label: 'Jenis Kemasan', to: '/master/packaging-types', icon: 'lucide:box' },
       { label: 'Kendaraan', to: '/master/vehicles', icon: 'lucide:truck' },
       { label: 'Pengemudi', to: '/master/drivers', icon: 'lucide:id-card' },
-      { label: 'Perangkat', to: '/master/devices', icon: 'lucide:cpu' },
-      { label: 'Binding Perangkat', to: '/master/device-bindings', icon: 'lucide:plug' },
+      { label: 'Device IoT', to: '/master/devices', icon: 'lucide:cpu' },
+      { label: 'Binding GPS Armada', to: '/master/device-bindings', icon: 'lucide:plug' },
     ],
   },
   {
