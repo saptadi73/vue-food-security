@@ -1,5 +1,12 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-20 - Pilih Device existing sebelum membuat binding MQTT
+
+- Panel binding MQTT sekarang memuat Device ACTIVE yang sudah ada sesuai tipe
+  event. Pengguna dapat memilih Device existing; sistem memperbarui topic dan
+  selector event/sensor tanpa membuat duplikat.
+- Form nama/hardware dan aksi create hanya digunakan jika Device baru diperlukan.
+
 ## 2026-09-20 - Form Device dengan pilihan tipe dan keterangan field
 
 - Field `device_type` pada Master Perangkat sekarang berupa pilihan terarah:

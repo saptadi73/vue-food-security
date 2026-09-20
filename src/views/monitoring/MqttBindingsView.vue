@@ -24,8 +24,11 @@ const vehicles = ref<Vehicle[]>([])
 const selectedTopic = ref<string | null>(null)
 const selectedEvent = ref<MqttEventRecord | null>(null)
 const selectedVehicle = ref<string | null>(null)
+const selectedDeviceUuid = ref<string | null>(null)
+const devices = ref<Awaited<ReturnType<typeof fsos.masters.devices.list>>['items']>([])
 const deviceName = ref('')
 const hardware = ref('')
+const loadingDevices = ref(false)
 const loadingTopics = ref(false)
 const loadingEvents = ref(false)
 const saving = ref(false)
@@ -64,6 +67,14 @@ const eventType = computed(() => {
 
 const mqttEvent = computed(() => typeof payload.value.event === 'string' ? payload.value.event : null)
 const mqttSensor = computed(() => typeof payload.value.sensor === 'number' ? payload.value.sensor : null)
+const deviceType = computed(() => eventType.value === 'GPS' ? 'GPS' : 'FOOD_TEMPERATURE')
+const selectedDevice = computed(() => devices.value.find((device) => device.device_uuid === selectedDeviceUuid.value) ?? null)
+const deviceOptions = computed<SelectOption[]>(() => devices.value
+  .filter((device) => device.status === 'ACTIVE' && device.device_type === deviceType.value)
+  .map((device) => ({
+    value: device.device_uuid,
+    label: `${device.device_name} · ${device.device_type} · ${device.mqtt_topic ?? 'tanpa topic'}`,
+  })))
 
 async function loadTopics() {
   loadingTopics.value = true
@@ -144,43 +155,82 @@ async function selectTopic(topic: string) {
   }
 }
 
+async function loadDevicesForEvent() {
+  loadingDevices.value = true
+  try {
+    const page = await fsos.masters.devices.list({ limit: 100 })
+    devices.value = page.items
+  } catch (cause) {
+    devices.value = []
+    toast.fromError(cause, 'Gagal memuat Device aktif')
+  } finally {
+    loadingDevices.value = false
+  }
+}
+
 async function chooseEvent(event: MqttEventRecord) {
   selectedEvent.value = event
-  deviceName.value = `GPS ${event.topic.split('/').filter(Boolean).at(-2) ?? 'MQTT'}`
+  selectedDeviceUuid.value = null
+  deviceName.value = eventType.value === 'GPS'
+    ? `GPS ${event.topic.split('/').filter(Boolean).at(-2) ?? 'MQTT'}`
+    : String(payload.value.event ?? 'Sensor Suhu MQTT')
   hardware.value = ''
+  await loadDevicesForEvent()
   await nextTick()
   bindingPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function createAndBind() {
-  if (!selectedEvent.value || !deviceName.value.trim() || (eventType.value === 'GPS' && !selectedVehicle.value)) return
+  if (!selectedEvent.value || (eventType.value === 'GPS' && !selectedVehicle.value)) return
   saving.value = true
   try {
-    const input: DeviceInput = {
-      device_uuid: eventDeviceUuid.value || null,
-      device_name: deviceName.value.trim(),
-      device_type: eventType.value,
-      hardware: hardware.value.trim() || null,
-      mqtt_topic: selectedEvent.value.topic,
-      mqtt_event: mqttEvent.value,
-      mqtt_sensor: mqttSensor.value,
-      status: 'ACTIVE',
-      zone_id: null,
-      firmware: null,
-      last_online: selectedEvent.value.received_at,
+    let device = selectedDevice.value
+    if (device) {
+      device = await fsos.masters.devices.update(device.device_id, {
+        device_uuid: device.device_uuid,
+        device_name: device.device_name,
+        device_type: device.device_type,
+        firmware: device.firmware,
+        hardware: device.hardware,
+        zone_id: device.zone_id,
+        mqtt_topic: selectedEvent.value.topic,
+        mqtt_event: mqttEvent.value,
+        mqtt_sensor: mqttSensor.value,
+        status: 'ACTIVE',
+        last_online: selectedEvent.value.received_at,
+        expected_version: device.version,
+      })
+    } else {
+      if (!deviceName.value.trim()) return
+      const input: DeviceInput = {
+        device_uuid: eventDeviceUuid.value || null,
+        device_name: deviceName.value.trim(),
+        device_type: eventType.value,
+        hardware: hardware.value.trim() || null,
+        mqtt_topic: selectedEvent.value.topic,
+        mqtt_event: mqttEvent.value,
+        mqtt_sensor: mqttSensor.value,
+        status: 'ACTIVE',
+        zone_id: null,
+        firmware: null,
+        last_online: selectedEvent.value.received_at,
+      }
+      device = await fsos.masters.devices.create(input)
     }
-    const device = await fsos.masters.devices.create(input)
     if (eventType.value === 'GPS' && selectedVehicle.value) {
       await fsos.masters.deviceBindings.create({
         device_id: device.device_id,
         vehicle_id: selectedVehicle.value,
       })
     }
-    toast.success(eventType.value === 'GPS'
-      ? 'Device MQTT berhasil dibuat dan dibinding ke armada'
-      : 'Device sensor MQTT berhasil dibuat dengan selector event')
+    toast.success(selectedDevice.value
+      ? 'Device MQTT berhasil diperbarui dan di-binding ke event'
+      : eventType.value === 'GPS'
+        ? 'Device MQTT berhasil dibuat dan dibinding ke armada'
+        : 'Device sensor MQTT berhasil dibuat dengan selector event')
     selectedEvent.value = null
     selectedVehicle.value = null
+    selectedDeviceUuid.value = null
     await loadTopics()
   } catch (cause) {
     toast.fromError(cause, 'Gagal membuat device atau binding armada')
@@ -264,7 +314,7 @@ onMounted(() => {
       </AppCard>
     </div>
 
-    <AppCard ref="bindingPanel" title="3. Binding Device MQTT" subtitle="Buat Device ACTIVE dari topic/event yang dipilih" icon="lucide:link-2">
+    <AppCard ref="bindingPanel" title="3. Binding Device MQTT" subtitle="Pilih Device aktif yang sudah ada, atau buat baru bila diperlukan" icon="lucide:link-2">
       <div v-if="selectedEvent" class="grid gap-4 lg:grid-cols-2">
         <div class="rounded-xl bg-surface-50 p-4 text-sm dark:bg-surface-800/60">
           <p class="font-semibold text-surface-900 dark:text-white">Event terpilih</p>
@@ -277,14 +327,27 @@ onMounted(() => {
           </dl>
         </div>
         <div class="space-y-4">
-          <AppInput v-model="deviceName" label="Nama device" required placeholder="GPS Armada 01" />
-          <AppInput v-model="hardware" label="Hardware" placeholder="gps-tracker-v1" />
+          <AppSelect
+            v-model="selectedDeviceUuid"
+            label="Device aktif yang sudah ada (opsional)"
+            :options="deviceOptions"
+            :loading="loadingDevices"
+            placeholder="Pilih Device atau kosongkan untuk membuat baru"
+            hint="Device yang dipilih akan diperbarui topic dan selector event-nya."
+          />
+          <div v-if="selectedDevice" class="rounded-lg border border-brand-300 bg-brand-50 p-3 text-xs text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
+            Device existing terpilih: <strong>{{ selectedDevice.device_name }}</strong>. Tidak akan dibuat duplikat.
+          </div>
+          <template v-else>
+            <AppInput v-model="deviceName" label="Nama Device baru" :required="!selectedDevice" placeholder="GPS Armada 01 / Sensor Makanan 01" />
+            <AppInput v-model="hardware" label="Hardware (opsional)" placeholder="gps-tracker-v1 / DS18B20" />
+          </template>
           <AppSelect v-if="eventType === 'GPS'" v-model="selectedVehicle" label="Armada tujuan" required :options="vehicleOptions" placeholder="Pilih armada aktif" />
           <p v-else class="rounded-lg bg-surface-50 p-3 text-xs text-surface-600 dark:bg-surface-800/60 dark:text-surface-300">
             Sensor suhu dibuat sebagai Device. Binding ke production batch atau holding dilakukan saat proses operasional.
           </p>
-          <AppButton block icon="lucide:link-2" :loading="saving" :disabled="(eventType === 'GPS' && !selectedVehicle) || !deviceName.trim()" @click="createAndBind">
-            {{ eventType === 'GPS' ? 'Buat Device & Binding Armada' : 'Buat Device Sensor' }}
+          <AppButton block icon="lucide:link-2" :loading="saving" :disabled="(eventType === 'GPS' && !selectedVehicle) || (!selectedDevice && !deviceName.trim())" @click="createAndBind">
+            {{ selectedDevice ? 'Binding Device Terpilih' : eventType === 'GPS' ? 'Buat Device & Binding Armada' : 'Buat Device Sensor' }}
           </AppButton>
           <p class="text-xs text-surface-500">Jika pembuatan Device berhasil tetapi binding gagal, Device tetap tercatat dan dapat diperbaiki dari Master Perangkat/Binding.</p>
         </div>
