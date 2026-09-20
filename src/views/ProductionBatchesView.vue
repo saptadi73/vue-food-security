@@ -8,6 +8,7 @@ import AppSelect, { type SelectOption } from '@/components/ui/AppSelect.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import QrScanner from '@/components/qr/QrScanner.vue'
 import { fsos, isApiError } from '@/api'
 import { mastersApi } from '@/api/modules/masters'
 import type { ProductionBatchData, ProductionBatchDetail } from '@/api/modules/operations'
@@ -28,6 +29,8 @@ const startTarget = ref<ProductionBatchData | null>(null)
 const createOpen = ref(false)
 const completeOpen = ref(false)
 const startOpen = ref(false)
+const scannerOpen = ref(false)
+const scannerIndex = ref(0)
 const saving = ref(false)
 const detailLoading = ref(false)
 const startStockLoading = ref<Record<number, boolean>>({})
@@ -161,6 +164,33 @@ function openStart(row: ProductionBatchData) {
   }
   formErrors.value = {}
   startOpen.value = true
+}
+
+function openBatchScanner(index: number) {
+  scannerIndex.value = index
+  scannerOpen.value = true
+}
+
+async function onBatchQrDetected(payload: string) {
+  const index = scannerIndex.value
+  const source = startForm.value.items[index]
+  if (!source) return
+  scannerOpen.value = false
+  saving.value = true
+  formErrors.value = {}
+  try {
+    const prefix = 'fsos:raw-material-batch:'
+    const batch = payload.startsWith(prefix)
+      ? await fsos.operations.rawMaterialBatches.detail(payload.slice(prefix.length))
+      : await fsos.operations.rawMaterialBatches.resolve(payload.trim())
+    source.raw_material_batch_id = batch.raw_material_batch_id
+    await loadStartRowStock(index)
+    toast.success('QR bahan terbaca', { description: batch.batch_code })
+  } catch (error) {
+    toast.fromError(error, 'QR bahan tidak dapat diproses')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function loadStartRowStock(index: number) {
@@ -401,7 +431,18 @@ async function cancelBatch(row: ProductionBatchData) {
       <div class="space-y-4 py-2">
         <div class="rounded-xl border border-dashed border-primary-200 bg-primary-50/70 p-3 text-sm text-primary-800 dark:border-primary-800 dark:bg-primary-950/30 dark:text-primary-200">
           <p class="font-semibold">{{ startTarget?.batch_code }}</p>
-          <p>Gunakan scanner frontend untuk mengisi Raw Material Batch ID/QR, Storage ID, version batch bahan, dan quantity yang dikeluarkan.</p>
+          <p>Pindai QR bahan untuk mengisi batch, storage, versi bahan, dan quantity yang tersedia secara otomatis.</p>
+        </div>
+        <div v-if="scannerOpen" class="rounded-2xl border border-surface-200 p-3 dark:border-surface-800">
+          <div class="mb-3 flex items-center justify-between">
+            <p class="text-sm font-semibold">Scan QR bahan {{ scannerIndex + 1 }}</p>
+            <AppButton size="xs" variant="ghost" @click="scannerOpen = false">Tutup scanner</AppButton>
+          </div>
+          <QrScanner
+            hint="Arahkan kamera ke QR label batch bahan."
+            @detected="onBatchQrDetected"
+            @error="(message) => toast.warning('Kamera scanner', { description: message })"
+          />
         </div>
         <p v-if="formErrors.items" class="text-sm font-medium text-danger-600">{{ formErrors.items }}</p>
         <div v-for="(source, index) in startForm.items" :key="index" class="rounded-2xl border border-surface-200 p-4 dark:border-surface-800">
@@ -410,7 +451,10 @@ async function cancelBatch(row: ProductionBatchData) {
             <AppButton size="xs" variant="ghost" icon="lucide:trash-2" @click="removeStartRow(index)">Hapus</AppButton>
           </div>
           <div class="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr_1.15fr_0.7fr_0.8fr_auto]">
-            <AppInput v-model="source.raw_material_batch_id" label="Raw material batch ID / QR" required placeholder="UUID dari scan bahan" />
+            <div class="lg:col-span-1">
+              <AppInput v-model="source.raw_material_batch_id" label="Raw material batch ID / QR" required placeholder="Pindai QR atau UUID" />
+              <AppButton class="mt-2 w-full" size="sm" variant="outline" icon="lucide:scan-line" @click="openBatchScanner(index)">Scan QR bahan</AppButton>
+            </div>
             <AppInput v-model="source.storage_id" label="Storage ID" required placeholder="UUID storage/rak" />
             <AppInput v-model="source.expected_version" label="Version bahan" required inputmode="numeric" placeholder="4" />
             <AppInput v-model="source.quantity" label="Qty keluar" required inputmode="decimal" placeholder="1.000000" />

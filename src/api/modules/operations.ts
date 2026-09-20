@@ -470,6 +470,8 @@ export const operationsApi = {
     } = {}) => api.get<OffsetPage<RawMaterialBatchData>>(endpoints.rawMaterialBatches.list(query)),
     detail: (id: string) =>
       api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.detail(id)),
+    resolve: (qrCode: string) =>
+      api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.resolve(qrCode)),
     stock: (id: string) => api.get<RawMaterialStockBalanceData>(endpoints.rawMaterialBatches.stock(id)),
   },
   productionBatches: productionBatchesApi,
@@ -506,7 +508,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 
