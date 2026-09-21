@@ -39,8 +39,8 @@ function isActive(to: string) {
     <!-- Brand -->
     <div class="flex h-16 shrink-0 items-center gap-3 px-4">
       <img
-        src="/logo-fsos.png"
-        alt="Logo Food Security"
+        src="/logo-fstm.png"
+        alt="Logo Food Safety & Traceability Management"
         class="size-11 shrink-0 object-contain drop-shadow-md"
       />
       <div v-if="!collapsed" class="min-w-0 animate-fade-in">
@@ -48,7 +48,7 @@ function isActive(to: string) {
           {{ env.appName }}
         </p>
         <p class="truncate text-[11px] text-surface-500 dark:text-surface-400">
-          Food Security & Traceability
+          Food Safety & Traceability Management
         </p>
       </div>
     </div>

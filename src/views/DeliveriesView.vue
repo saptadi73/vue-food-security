@@ -242,7 +242,7 @@ onMounted(() => void loadOptions())
   <div>
     <PageHeader
       title="Pengiriman Aktif"
-      description="Buat manifest, scan/loading ke armada, pantau perjalanan, dan selesaikan delivery sesuai alur distribusi FSOS."
+      description="Buat manifest, scan/loading ke armada, pantau perjalanan, dan selesaikan delivery sesuai alur distribusi FSTM."
       icon="lucide:truck"
       tag="Delivery.Read"
     >

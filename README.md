@@ -1,6 +1,6 @@
 ﻿# vue-food-security
 
-Frontend Vue 3 untuk FSOS (Food Security & Traceability Operations System).
+Frontend Vue 3 untuk FSTM (Food Safety & Traceability Management).
 
 ## Backend contract
 

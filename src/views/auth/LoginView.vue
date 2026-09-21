@@ -85,8 +85,8 @@ async function submit() {
     <div class="animate-fade-up relative w-full max-w-md">
       <div class="mb-7 flex flex-col items-center text-center">
         <img
-          src="/logo-fsos.png"
-          alt="Logo Food Security"
+          src="/logo-fstm.png"
+          alt="Logo Food Safety & Traceability Management"
           class="mb-4 size-32 object-contain drop-shadow-2xl"
         />
         <h1 class="text-2xl font-extrabold tracking-tight text-white">{{ env.appName }}</h1>

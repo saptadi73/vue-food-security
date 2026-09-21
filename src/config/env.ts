@@ -6,8 +6,8 @@ const useProxy = import.meta.env.VITE_USE_PROXY
   : import.meta.env.DEV
 
 export const env = {
-  appName: 'FSOS',
-  appLongName: 'Food Security & Traceability Operations System',
+  appName: 'FSTM',
+  appLongName: 'Food Safety & Traceability Management',
   apiOrigin: rawOrigin || 'same-origin',
   apiPrefix: rawPrefix,
   /** Tanpa origin eksplisit, production memakai reverse proxy same-origin di /api. */

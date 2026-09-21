@@ -26,7 +26,7 @@ const currentTitle = computed(() => {
   const match = navigation
     .flatMap((section) => section.items)
     .find((item) => (item.to === '/' ? route.path === '/' : route.path.startsWith(item.to)))
-  return (route.meta.title as string) ?? match?.label ?? 'FSOS'
+  return (route.meta.title as string) ?? match?.label ?? 'FSTM'
 })
 
 const section = computed(

@@ -189,7 +189,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const title = (to.meta.title as string) ?? ''
-  document.title = title ? `${title} · FSOS` : 'FSOS · Food Security & Traceability'
+  document.title = title ? `${title} · FSTM` : 'FSTM · Food Safety & Traceability Management'
 })
 
 export default router
