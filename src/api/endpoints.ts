@@ -101,6 +101,7 @@ export const endpoints = {
   rawMaterialBatches: {
     ...collection('/raw-material-batches'),
     resolve: (qrCode: string) => `/raw-material-batches/resolve?qr_code=${encodeURIComponent(qrCode)}`,
+    putaway: (id: string) => `/raw-material-batches/${id}/putaway`,
     stock: (id: string) => `/raw-material-batches/${id}/stock`,
   },
   productionBatches: {
@@ -183,7 +184,6 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-
 
 
 

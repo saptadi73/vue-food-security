@@ -452,8 +452,8 @@ async function cancelBatch(row: ProductionBatchData) {
               <AppInput v-model="source.raw_material_batch_id" label="Raw material batch ID / QR" required placeholder="Pindai QR atau UUID" />
               <AppButton class="mt-2 w-full" size="sm" variant="outline" icon="lucide:scan-line" @click="openBatchScanner(index)">Scan QR bahan</AppButton>
             </div>
-            <AppInput v-model="source.storage_id" label="Storage ID" required placeholder="UUID storage/rak" />
-            <AppInput v-model="source.expected_version" label="Version bahan" required inputmode="numeric" placeholder="4" />
+            <AppInput v-model="source.storage_id" label="Storage otomatis" required readonly placeholder="Terisi dari saldo batch" />
+            <AppInput v-model="source.expected_version" label="Version bahan" required readonly inputmode="numeric" placeholder="Terisi otomatis" />
             <AppInput v-model="source.quantity" label="Qty keluar" required inputmode="decimal" placeholder="1.000000" />
             <div class="flex items-end">
               <AppButton class="w-full" size="sm" variant="outline" icon="lucide:warehouse" :loading="startStockLoading[index]" @click="loadStartRowStock(index)">Cek stok</AppButton>

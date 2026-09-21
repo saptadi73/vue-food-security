@@ -181,6 +181,13 @@ export interface RawMaterialStockBalanceData {
   storages: RawMaterialStockStorageData[]
 }
 
+export interface RawMaterialPutawayInput {
+  expected_version: number
+  storage_id: Uuid
+  zone_id?: Uuid | null
+  quantity: DecimalString
+}
+
 export type ReceivingStatus = 'CREATED' | 'COMPLETED' | 'CANCELLED'
 
 
@@ -472,6 +479,8 @@ export const operationsApi = {
       api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.detail(id)),
     resolve: (qrCode: string) =>
       api.get<RawMaterialBatchData>(endpoints.rawMaterialBatches.resolve(qrCode)),
+    putaway: (id: string, input: RawMaterialPutawayInput) =>
+      api.post<unknown>(endpoints.rawMaterialBatches.putaway(id), input),
     stock: (id: string) => api.get<RawMaterialStockBalanceData>(endpoints.rawMaterialBatches.stock(id)),
   },
   productionBatches: productionBatchesApi,
@@ -508,7 +517,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 

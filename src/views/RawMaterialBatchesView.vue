@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
 import AppCard from '@/components/ui/AppCard.vue'
@@ -32,12 +32,14 @@ const saving = ref(false)
 const recoveringId = ref<string | null>(null)
 const supplierOptions = ref<SelectOption[]>([])
 const kitchenOptions = ref<SelectOption[]>([])
+const storageOptions = ref<SelectOption[]>([])
 const materialOptions = ref<SelectOption[]>([])
 const formErrors = ref<Record<string, string>>({})
 
 const form = ref({
   supplier_id: null as string | null,
   kitchen_id: null as string | null,
+  storage_id: null as string | null,
   raw_material_id: null as string | null,
   received_at: '',
   batch_code: '',
@@ -110,6 +112,7 @@ async function openCreate() {
   form.value = {
     supplier_id: null,
     kitchen_id: null,
+    storage_id: null,
     raw_material_id: null,
     received_at: nowLocalMinute(),
     batch_code: '',
@@ -120,9 +123,10 @@ async function openCreate() {
     photo: null,
     qr_code: '',
   }
-  ;[supplierOptions.value, kitchenOptions.value, materialOptions.value] = await Promise.all([
+  ;[supplierOptions.value, kitchenOptions.value, storageOptions.value, materialOptions.value] = await Promise.all([
     references.load('suppliers', 'supplier_id', 'supplier_name', true),
     references.load('kitchens', 'kitchen_id', 'kitchen_name', true),
+    references.load('storages', 'storage_id', 'storage_name', true),
     references.load('rawMaterials', 'raw_material_id', 'material_name', true),
   ])
   createOpen.value = true
@@ -132,6 +136,7 @@ function validate() {
   const errors: Record<string, string> = {}
   if (!form.value.supplier_id) errors.supplier_id = 'Wajib diisi.'
   if (!form.value.kitchen_id) errors.kitchen_id = 'Wajib diisi.'
+  if (!form.value.storage_id) errors.storage_id = 'Wajib diisi agar stok langsung tersedia.'
   if (!form.value.raw_material_id) errors.raw_material_id = 'Wajib diisi.'
   if (!form.value.received_at) errors.received_at = 'Wajib diisi.'
   if (!form.value.batch_code.trim()) errors.batch_code = 'Wajib diisi.'
@@ -144,6 +149,7 @@ async function submitCreate() {
   if (!validate() || saving.value) return
   saving.value = true
   formErrors.value = {}
+  let receivingCompleted = false
   try {
     let photoReference: string | null = null
     if (form.value.photo) {
@@ -167,12 +173,21 @@ async function submitCreate() {
         },
       ],
     })
-    await fsos.operations.receivings.complete(receiving.receiving_id, {
+    const completed = await fsos.operations.receivings.complete(receiving.receiving_id, {
       expected_version: receiving.version,
       items: receiving.items.map((item) => ({
         receiving_item_id: item.receiving_item_id,
         accepted: true,
       })),
+    })
+    receivingCompleted = true
+    const batch = completed.items[0]?.batch
+    if (!batch) throw new Error('Batch hasil penerimaan tidak tersedia untuk putaway.')
+    await fsos.operations.rawMaterialBatches.putaway(batch.raw_material_batch_id, {
+      expected_version: batch.version,
+      storage_id: form.value.storage_id!,
+      zone_id: null,
+      quantity: String(form.value.quantity),
     })
     toast.success('Bahan diterima', { description: form.value.batch_code.trim() })
     createOpen.value = false
@@ -180,7 +195,9 @@ async function submitCreate() {
     await list.refresh()
   } catch (error) {
     if (isApiError(error)) formErrors.value = error.fieldErrors
-    toast.fromError(error, 'Gagal mencatat penerimaan bahan')
+    toast.fromError(error, receivingCompleted
+      ? 'Bahan diterima, tetapi penempatan ke storage gagal'
+      : 'Gagal mencatat penerimaan bahan')
   } finally {
     saving.value = false
   }
@@ -373,6 +390,14 @@ async function cancelDraft(row: RawMaterialBatchData) {
           required
           :options="kitchenOptions"
           :error="formErrors.kitchen_id"
+        />
+        <AppSelect
+          v-model="form.storage_id"
+          label="Storage tujuan"
+          required
+          :options="storageOptions"
+          hint="Seluruh quantity langsung ditempatkan setelah penerimaan selesai."
+          :error="formErrors.storage_id"
         />
         <AppInput
           v-model="form.received_at"
