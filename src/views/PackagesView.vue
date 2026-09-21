@@ -199,8 +199,15 @@ async function packageHolding(
     try {
       const page = await mastersApi.devices.list({ limit: 100 })
       holdingDeviceOptions.value = page.items
-        .filter((device) => device.status === 'ACTIVE' && ['FOOD_TEMPERATURE', 'TEMPERATURE', 'FOOD_SENSOR'].includes(device.device_type))
-        .map((device) => ({ value: device.device_uuid, label: `${device.device_name} · ${device.device_uuid}` }))
+        .filter(
+          (device) =>
+            device.status === 'ACTIVE' &&
+            ['FOOD_TEMPERATURE', 'TEMPERATURE', 'FOOD_SENSOR'].includes(device.device_type),
+        )
+        .map((device) => ({
+          value: device.device_uuid,
+          label: `${device.device_name} · ${device.device_uuid}`,
+        }))
       holdingTarget.value = row
       holdingDevice.value = null
       holdingOpen.value = true
@@ -319,9 +326,13 @@ watch(
   },
 )
 
-onMounted(() => {
+onMounted(async () => {
   if (typeof route.query.batch === 'string') batchId.value = route.query.batch
-  void loadProductionOptions()
+  await loadProductionOptions()
+  if (!batchId.value) {
+    const firstBatchId = productionOptions.value[0]?.value
+    if (typeof firstBatchId === 'string') batchId.value = firstBatchId
+  }
   applyFilter()
 })
 </script>
@@ -541,8 +552,15 @@ onMounted(() => {
         />
       </div>
       <template #footer>
-        <AppButton variant="subtle" :disabled="saving" @click="holdingOpen = false">Batal</AppButton>
-        <AppButton icon="lucide:timer" :loading="saving" :disabled="!holdingDevice" @click="submitHoldingStart">
+        <AppButton variant="subtle" :disabled="saving" @click="holdingOpen = false"
+          >Batal</AppButton
+        >
+        <AppButton
+          icon="lucide:timer"
+          :loading="saving"
+          :disabled="!holdingDevice"
+          @click="submitHoldingStart"
+        >
           Mulai Holding
         </AppButton>
       </template>
