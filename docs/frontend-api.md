@@ -1,6 +1,6 @@
 ﻿# Panduan integrasi frontend FSOS
 
-Terakhir diperbarui: 2026-09-20. Versi aplikasi: 0.1.0.
+Terakhir diperbarui: 2026-09-15. Versi aplikasi: 0.1.0.
 Status: **165 operasi HTTP aktif**, termasuk CRUD empat belas master, autentikasi,
 konfigurasi rule, bukti alarm/sesi perangkat, penerimaan bahan/stok, produksi,
 pengemasan/holding, pengiriman, penerimaan sekolah, konsumsi dan complaint intake/report.
@@ -8,9 +8,6 @@ Recall start/execute/withdrawal/close, notification outbox, traceability passpor
 notifikasi dan pendukung lain masih bertahap.
 
 Dokumen ini menjelaskan implementasi yang dapat dipanggil sekarang.
-Untuk `supplier-materials`, request menggunakan UUID `supplier_id` dan
-`raw_material_id`, sedangkan tabel frontend menampilkan `supplier_name` dan
-`material_name`; UUID tidak ditujukan untuk dihafalkan pengguna.
 [Desain API](../../docs/16_API_design.md) adalah roadmap draft, bukan daftar
 endpoint aktif. Tabel database yang sudah ada belum menyediakan API CRUD.
 
@@ -172,15 +169,15 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/device-sessions` | Daftar sesi perangkat | Tidak ada; filter/pagination | 200 |
 | GET | `/api/v1/device-sessions/{session_id}` | Detail sesi perangkat | Tidak ada | 200 |
 | POST | `/api/v1/device-sessions/{session_id}/end` | Catat akhir sesi | disconnected_at | 200 |
+| GET | `/api/v1/mqtt/events` | Daftar event MQTT yang sudah tersimpan | Tidak ada; topic/status/waktu/pagination | 200 |
 | GET | `/api/v1/mqtt/topics` | Daftar topic MQTT tersimpan | Tidak ada; topic_prefix/pagination | 200 |
-| GET | `/api/v1/mqtt/events` | Daftar event MQTT tersimpan | Tidak ada; topic/status/waktu/pagination | 200 |
 | GET | `/api/v1/devices` | Daftar perangkat | Tidak ada; filter/pagination/zone | 200 |
 | POST | `/api/v1/devices` | Buat perangkat | DeviceInput | 201 |
 | GET | `/api/v1/devices/{identifier}` | Detail perangkat | Tidak ada | 200 |
 | PUT | `/api/v1/devices/{identifier}` | Ganti perangkat | DeviceInput + expected_version | 200 |
 | DELETE | `/api/v1/devices/{identifier}` | Soft delete master | Tidak ada; expected_version query wajib | 200 |
-| GET | `/api/v1/device-bindings` | Daftar binding perangkat-kendaraan | Tidak ada; filter/pagination | 200 |
-| POST | `/api/v1/device-bindings` | Buat binding perangkat-kendaraan | DeviceBindingInput | 201 |
+| GET | `/api/v1/device-bindings` | Daftar binding Device GPS-armada | Tidak ada; filter/pagination | 200 |
+| POST | `/api/v1/device-bindings` | Buat binding Device GPS ke armada | DeviceBindingInput | 201 |
 | GET | `/api/v1/device-bindings/{identifier}` | Detail binding | Tidak ada | 200 |
 | PUT | `/api/v1/device-bindings/{identifier}` | Ganti binding | DeviceBindingInput + expected_version | 200 |
 | DELETE | `/api/v1/device-bindings/{identifier}` | Putuskan hubungan perangkat-kendaraan | Tidak ada; expected_version query wajib | 200 |
@@ -300,7 +297,7 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | GET | `/api/v1/deliveries/{identifier}` | Detail manifest/perjalanan | Tanpa body | 200 |
 | GET | `/api/v1/deliveries/{identifier}/tracking` | Tracking GPS/suhu terakhir dan sisa jarak/waktu | Tanpa body | 200 |
 | POST | `/api/v1/telemetry/gps` | Ingest GPS armada HTTP | vehicle_uuid, lat/lon, speed opsional | 201 |
-| POST | `/api/v1/telemetry/temperatures` | Ingest suhu device/storage/food HTTP | device_uuid, storage_uuid/package_uuid/production_batch_uuid opsional, temperature/unit | 201 |
+| POST | `/api/v1/telemetry/temperatures` | Ingest suhu device/storage HTTP | device_uuid, storage_uuid opsional, temperature/unit | 201 |
 | POST | `/api/v1/deliveries/{identifier}/depart` | Berangkat | expected_version/estimated_arrival_time | 200 |
 | POST | `/api/v1/deliveries/{identifier}/complete` | Konfirmasi perjalanan selesai | expected_version | 200 |
 | POST | `/api/v1/deliveries/{identifier}/cancel` | Batalkan CREATED | expected_version | 200 |
@@ -310,6 +307,7 @@ kontrak akan ditambahkan bersamaan dengan implementasinya.
 | POST | `/api/v1/receivings/{identifier}/complete` | Selesaikan inspeksi | expected_version + seluruh keputusan item | 200 |
 | POST | `/api/v1/receivings/{identifier}/cancel` | Batalkan CREATED | expected_version | 200 |
 | GET | `/api/v1/raw-material-batches` | Daftar batch bahan | Tidak ada; filter/pagination | 200 |
+| GET | `/api/v1/raw-material-batches/resolve` | Resolve QR batch bahan | Tidak ada; `qr_code` query wajib | 200 |
 | GET | `/api/v1/raw-material-batches/{identifier}` | Detail batch bahan | Tidak ada | 200 |
 
 ### GET /api/v1/health
@@ -575,7 +573,7 @@ permission Read/Write dan expected_version. Lihat [kontrak master lokasi](#kontr
 Master data selain kitchen/storage/zone/sekolah/kendaraan/driver/supplier/bahan/relasi pemasok/menu/resep/jenis kemasan/holding/alarm rule, telemetry selain alarm/sesi, stok lanjutan, holding dinamis berbasis telemetry,
 traceability traversal, GPS/geofence fleet, complaint, recall, dashboard, analytics, dan cetak QR
 belum memiliki endpoint aktif. Filter dan pagination tersedia untuk aturan/alarm/sesi
-sesuai kontrak masing-masing; sort kustom dan upload belum tersedia melalui HTTP. Payloadnya belum menjadi
+sesuai kontrak masing-masing; upload foto penerimaan tersedia melalui endpoint multipart khusus. Payloadnya belum menjadi
 kontrak; akan ditambahkan saat endpoint dibuat.
 
 Tidak ada route WebSocket atau SSE aktif. Frontend belum dapat berlangganan
@@ -882,7 +880,7 @@ aktif. Tenant dan actor berasal dari sesi, tidak diterima dari body/header tenan
 Header Accept: application/json disarankan, Content-Type: application/json wajib
 untuk POST/PUT, X-Correlation-ID opsional. Respons menggunakan envelope standar,
 X-Request-ID, Cache-Control: no-store dan Pragma: no-cache, termasuk error.
-Tidak ada cookie, API key, upload atau subscription. Limiter sementara /auth/*
+Tidak ada cookie, API key atau subscription. Upload hanya tersedia pada endpoint bukti foto yang didokumentasikan di bagian receiving. Limiter sementara /auth/*
 belum mencakup endpoint holding rule; limiter bisnis lintas worker tetap TODO.
 
 | Method/path | Tujuan | Permission | Body | Path/query |
@@ -1962,13 +1960,13 @@ belum menerbitkan event runtime atau GPS log.
 
 | Method/path | Tujuan | Permission | Body | Path/query |
 | --- | --- | --- | --- | --- |
-| GET /api/v1/devices | Daftar perangkat | Device.Read | Tidak ada | offset/limit/zone_id |
+| GET /api/v1/devices | Daftar seluruh Device IoT | Device.Read | Tidak ada | offset/limit/zone_id/device_type |
 | POST /api/v1/devices | Buat perangkat | Device.Write | DeviceInput | Tidak ada |
 | GET /api/v1/devices/{identifier} | Detail perangkat | Device.Read | Tidak ada | identifier UUID perangkat wajib |
 | PUT /api/v1/devices/{identifier} | Ganti definisi perangkat | Device.Write | DeviceInput + expected_version | identifier UUID wajib |
 | DELETE /api/v1/devices/{identifier} | Soft delete perangkat | Device.Delete | Tidak ada | identifier UUID; expected_version query wajib |
-| GET /api/v1/device-bindings | Daftar binding perangkat-kendaraan | Device.Read | Tidak ada | offset/limit/device_id/vehicle_id |
-| POST /api/v1/device-bindings | Buat binding | Device.Write | DeviceBindingInput | Tidak ada |
+| GET /api/v1/device-bindings | Daftar binding Device GPS-armada | Device.Read | Tidak ada | offset/limit/device_id/vehicle_id |
+| POST /api/v1/device-bindings | Buat binding Device GPS ke armada | Device.Write | DeviceBindingInput | Tidak ada |
 | GET /api/v1/device-bindings/{identifier} | Detail binding | Device.Read | Tidak ada | identifier UUID binding wajib |
 | PUT /api/v1/device-bindings/{identifier} | Ganti binding | Device.Write | DeviceBindingInput + expected_version | identifier UUID wajib |
 | DELETE /api/v1/device-bindings/{identifier} | Soft delete binding | Device.Delete | Tidak ada | identifier UUID; expected_version query wajib |
@@ -1988,8 +1986,8 @@ Respons memakai `JSON envelope`, `X-Request-ID`, `Cache-Control: no-store`, `Pra
 | firmware | string / tidak / ya | Maksimal 100 |
 | hardware | string / tidak / ya | Maksimal 100 |
 | mqtt_topic | string / tidak / ya | Maksimal 512 |
-| mqtt_event | string / tidak / ya | Selector payload event untuk topic multiplexed |
-| mqtt_sensor | integer / tidak / ya | Selector payload sensor, minimal 0 |
+| mqtt_event | string / tidak / ya | Selector `payload.event` untuk topic multiplexed seperti `fsos`; maksimal 200 |
+| mqtt_sensor | integer / tidak / ya | Selector `payload.sensor`, minimal 0 |
 | status | string enum / tidak / tidak | REGISTERED/ACTIVE/INACTIVE; default REGISTERED |
 | last_online | datetime UTC / tidak / ya | ISO 8601 UTC |
 
@@ -2038,6 +2036,8 @@ POST `/api/v1/devices`:
   "firmware": "fw-1.0.0",
   "hardware": "rev-b",
   "mqtt_topic": "fsos/site/gw/a1",
+  "mqtt_event": "Suhu Makanan",
+  "mqtt_sensor": 1,
   "status": "ACTIVE",
   "last_online": "2026-09-11T08:00:00Z"
 }
@@ -2685,6 +2685,8 @@ meskipun null) ditambah audit berikut. Semua field respons selalu hadir.
 | Field tambahan | Tipe / nullable | Makna |
 | --- | --- | --- |
 | supplier_id / raw_material_id / supplier_material_id | UUID / tidak | ID sumber sesuai modul, bukan asset_uuid registry |
+| supplier_code / supplier_name | string / tidak | Kode dan nama pemasok untuk ditampilkan di UI; berasal dari master pemasok aktif |
+| material_code / material_name | string / tidak | Kode dan nama bahan baku untuk ditampilkan di UI; berasal dari master bahan aktif |
 | tenant_id | UUID / tidak | Tenant sesi |
 | version | integer / tidak | Create 1; setiap PUT naik satu termasuk nilai identik |
 | created_at, updated_at | ISO 8601 UTC / tidak | Waktu audit |
@@ -3861,7 +3863,7 @@ POST tanpa idempotency key: retry kode/plat yang sudah disimpan memberi 409.
 
 ## Kontrak receiving dan batch bahan
 
-Status: **7 operasi aktif**, bagian penerimaan bahan. Prefix semua path `/api/v1`.
+Status: **8 operasi aktif**, bagian penerimaan bahan. Prefix semua path `/api/v1`.
 Tidak tersedia PUT/PATCH/DELETE receiving/item/batch. Item dan batch dibuat atomik
 melalui receiving; kesalahan draft diselesaikan dengan cancel lalu create baru. Frontend FSOS saat ini memakai workflow cepat untuk raw material receiving: `POST /receivings` satu item lalu langsung `POST /receivings/{id}/complete` dengan keputusan `accepted=true`, sehingga batch tampil sebagai ACCEPTED dan QR dapat dirender/print di browser
 menggunakan kode batch/QR baru. Kode lama tetap dicadangkan, termasuk yang dibatalkan.
@@ -3874,10 +3876,45 @@ menggunakan kode batch/QR baru. Kode lama tetap dicadangkan, termasuk yang dibat
 | POST `/receivings/{identifier}/complete` | Simpan seluruh keputusan inspeksi, `Receiving.Complete` | CompleteInput wajib | 200, ReceivingDetail |
 | POST `/receivings/{identifier}/cancel` | Batalkan CREATED, `Receiving.Cancel` | CancelInput wajib | 200, ReceivingDetail |
 | GET `/raw-material-batches` | Daftar/search batch, `RawMaterialBatch.Read` | Tidak ada | 200, BatchPage |
+| GET `/raw-material-batches/resolve?qr_code=...` | Resolve QR batch untuk scanner, `RawMaterialBatch.Read` | Query `qr_code` wajib, 1..255 | 200, BatchData |
 | GET `/raw-material-batches/{identifier}` | Detail batch, `RawMaterialBatch.Read` | Tidak ada | 200, BatchData |
 
+Resolver QR mencocokkan QR yang tersimpan pada tenant sesi setelah trim whitespace
+dan mengembalikan data batch. Frontend harus memakai resolver ini untuk hasil scan,
+bukan pencarian daftar berdasarkan `batch_code`. Frontend kemudian mengambil
+`/raw-material-batches/{identifier}/stock`
+untuk mengisi versi batch, storage dengan stok tersedia, dan quantity secara otomatis.
+QR yang tidak ditemukan atau milik tenant lain mengembalikan 404. Frontend wajib
+mencetak nilai `batch.qr_code` dari response API, bukan membuat QR browser-only.
+
+Catatan QR: jika `items[].qr_code` tidak dikirim, backend membuat QR stabil
+`fsos:raw-material-batch:<raw_material_batch_id>` dan mengembalikannya pada
+response. Frontend wajib mencetak `batch.qr_code` dari response, bukan membuat
+QR browser-only.
+
+### Upload foto inspeksi penerimaan
+
+Foto tidak lagi diisi sebagai path bebas pada frontend. Upload dilakukan terlebih
+dahulu melalui `POST /uploads/receiving-photo`, lalu nilai `data.reference`
+dikirim sebagai `items[].photo` pada `POST /receivings`.
+
+| Method/path | Tujuan dan permission independen | Payload | Sukses |
+| --- | --- | --- | --- |
+| POST `/uploads/receiving-photo` | Upload bukti foto penerimaan, `Receiving.Write` | `multipart/form-data`, field wajib `file` | 201, `UploadData` |
+| GET `/uploads/receiving-photo/{file_id}` | Mengambil foto pada tenant sesi, `Receiving.Read` | Tidak ada | 200, binary image |
+
+Upload hanya menerima `image/jpeg`, `image/png`, dan `image/webp`; batas default
+10 MiB dan dapat diatur backend dengan `UPLOAD_MAX_BYTES`. File diberi nama UUID,
+disimpan di direktori tenant yang dikonfigurasi `UPLOAD_DIR`, dan tidak memakai
+nama file dari pengguna. Upload tidak membuat receiving atau event; receiving
+tetap dibuat oleh `POST /receivings` setelah upload berhasil.
+
+Error utama: 400 tipe file kosong/tidak didukung, 401 sesi invalid, 403 permission
+tidak ada, 404 file/tenant tidak ditemukan, dan 413 melebihi batas.
+
 Seluruh endpoint memakai `Authorization: Bearer <access_token>` dari sesi aktif.
-POST wajib `Content-Type: application/json`; `Accept: application/json` dianjurkan.
+Endpoint JSON wajib `Content-Type: application/json`; endpoint upload memakai
+`multipart/form-data` dan browser harus mengatur boundary secara otomatis.
 `X-Correlation-ID` opsional, maksimum yang dicatat 128 karakter. Respons memakai
 JSON envelope umum, `X-Request-ID`, `Cache-Control: no-store`, `Pragma: no-cache`.
 Tenant/operator/audit diturunkan dari sesi, tidak boleh dikirim sebagai payload.
@@ -3927,9 +3964,9 @@ menyertakan items.
 | items[].quantity | decimal number/string | Ya / tidak | >0; maksimum 14 digit total, 6 desimal (maksimum 99999999.999999); bukan NaN/infinity/bool |
 | items[].temperature | decimal number/string | Tidak / ya / null | -9999.99..9999.99, maksimal 2 desimal; suhu inspeksi dalam Celsius |
 | items[].condition | string | Tidak / ya / null | 1..100 karakter; kondisi visual/manual bahan saat diterima, misalnya `GOOD`, `DAMAGED`, atau catatan singkat |
-| items[].photo | string | Tidak / ya / null | 1..1024 karakter; referensi foto kondisi bahan, tidak di-fetch/upload/diverifikasi backend |
+| items[].photo | string | Tidak / ya / null | 1..1024 karakter; gunakan `data.reference` dari `POST /uploads/receiving-photo` |
 | items[].expired_date | date YYYY-MM-DD | Tidak / ya / null | Batch kedaluwarsa boleh dicatat agar bisa ditolak |
-| items[].qr_code | string | Tidak / ya / null | Trim, 1..255; unik per tenant dan dalam request jika bukan null |
+| items[].qr_code | string | Tidak / ya / null | Trim, 1..255; unik per tenant dan dalam request jika bukan null. Null/omitted membuat backend menerbitkan `fsos:raw-material-batch:<UUID>` |
 
 Field ekstra ditolak pada seluruh object payload. String harus UTF-8 valid, tanpa
 NUL. Bool tidak diterima sebagai angka. `uom` diambil dari master bahan dan disimpan
@@ -4108,7 +4145,7 @@ CANCELLED, accepted null, version ketiganya 2. Semua field lain tetap.
           "batch_code": "BATCH-EXAMPLE-001",
           "expired_date": null,
           "status": "CREATED",
-          "qr_code": null
+          "qr_code": "fsos:raw-material-batch:66666666-6666-4666-8666-666666666666"
         }
       }
     ]
@@ -5422,8 +5459,10 @@ mengambil GPS terakhir dari `gps_log` berdasarkan vehicle manifest, suhu terakhi
 `temperature_log` device GPS kendaraan bila ada, lalu meminta jarak jalan dan durasi
 dari posisi kendaraan ke seluruh sekolah tujuan melalui Google Routes API. Backend
 memilih tujuan dengan durasi terlama. Jika Google gagal, timeout, key/quota tidak
-valid atau Routes API tidak aktif, remaining distance/duration dapat null. Jika belum ada GPS
-atau koordinat tujuan tidak lengkap, `latest_gps` dan remaining field dapat null.
+valid atau Routes API tidak aktif, backend memakai estimasi garis lurus berdasarkan
+koordinat dan kecepatan rata-rata. Jika belum ada GPS atau koordinat tujuan tidak
+lengkap, `latest_gps` dan remaining field dapat null; estimasi garis lurus bukan
+rute jalan aktual.
 Response field: delivery_id, vehicle, status, destination_count, latest_gps nullable
 (gps_log_id, recorded_at, latitude, longitude, speed, heading), latest_temperature
 nullable (temperature_log_id, device_uuid, recorded_at, temperature, unit),
@@ -5449,13 +5488,15 @@ dipakai oleh dashboard/tracking sebagai sampel terakhir.
 | Method/path | Payload | Sukses |
 |---|---|---|
 | POST `/telemetry/gps` | vehicle_uuid, latitude, longitude, speed/heading/altitude/hdop/satellite opsional, recorded_at opsional | 201 GpsIngestData |
-| POST `/telemetry/temperatures` | device_uuid, storage_uuid opsional, temperature, unit C/F/K default C, recorded_at opsional | 201 TemperatureIngestData |
+| POST `/telemetry/temperatures` | device_uuid, storage_uuid/package_uuid/production_batch_uuid opsional, temperature, unit C/F/K default C, recorded_at opsional | 201 TemperatureIngestData |
 
 `recorded_at` opsional timezone-aware dan tidak boleh masa depan; bila null/omitted,
 server memakai waktu UTC sekarang. GPS memerlukan vehicle aktif satu tenant.
 Temperature memerlukan device REGISTERED/ACTIVE satu tenant; storage bila dikirim
-harus aktif satu tenant. Tidak ada deduplikasi idempotency payload, API key device,
-validasi binding device-ke-vehicle/storage, atau parsing MQTT pada endpoint ini.
+harus aktif satu tenant. Untuk makanan jadi, kirim tepat satu dari `package_uuid`
+atau `production_batch_uuid`; backend mewajibkan binding sensor makanan aktif yang
+sesuai phase `HOLDING` atau `PRODUCTION`. Tidak ada deduplikasi idempotency payload,
+API key device, atau parsing MQTT pada endpoint ini.
 
 ```http
 POST /api/v1/telemetry/gps
@@ -5472,6 +5513,68 @@ Content-Type: application/json
 
 {"device_uuid":"33333333-3333-4333-8333-333333333333","storage_uuid":null,"temperature":"60.500","unit":"C","recorded_at":"2026-09-11T09:15:00Z"}
 ```
+
+### Discovery event MQTT yang tersimpan
+
+Status **aktif read-only untuk discovery**, bukan MQTT live consumer. Endpoint ini
+membaca pesan yang sudah ada di `mqtt_message_log`; endpoint tidak membuka koneksi
+broker, tidak menemukan topic baru, tidak membuat Device, tidak membuat binding,
+dan tidak mengubah `processed`. Tenant berasal dari bearer session.
+
+| Method/path | Tujuan | Permission | Body | Query |
+|---|---|---|---|---|
+| GET `/mqtt/events` | Daftar pesan MQTT tersimpan untuk dipilih operator | `Device.Read` | Tidak ada | `topic`, `processed`, `since`, `until`, `offset`, `limit` |
+| GET `/mqtt/topics` | Daftar topic unik dengan jumlah event dan waktu terakhir | `Device.Read` | Tidak ada | `topic_prefix`, `offset`, `limit` |
+
+Header wajib: `Authorization: Bearer <access_token>`. Response memakai envelope,
+`X-Request-ID`, `Cache-Control: no-store`, dan `Pragma: no-cache`. `topic` harus
+1..65535 karakter. `since` inklusif dan `until` eksklusif, keduanya harus timezone-aware
+dan `since < until`. `offset` default 0 dan `limit` default 20, maksimum 100.
+Urutan `received_at DESC, message_uuid DESC`, dan hanya data tenant aktif yang
+tidak terhapus yang terlihat.
+
+Payload tidak dikirim sebagai byte mentah. Bila UTF-8 JSON valid, field `payload_json`
+diisi dan `payload_text` null. Bila UTF-8 bukan JSON, `payload_text` berisi maksimal
+4096 karakter; payload biner menghasilkan keduanya null. Field response:
+`message_uuid`, `tenant_id`, `topic`, `qos`, `received_at`, `processed`,
+`payload_json`, dan `payload_text`.
+
+Contoh request:
+
+```http
+GET /api/v1/mqtt/events?topic=fsos%2Ffleet%2Farmada-01%2Fgps&processed=false&offset=0&limit=20
+Authorization: Bearer <access_token>
+```
+
+Contoh data sukses:
+
+```json
+{
+  "items": [{
+    "message_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "tenant_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "topic": "fsos/fleet/armada-01/gps",
+    "qos": 1,
+    "received_at": "2026-09-20T09:15:00Z",
+    "processed": false,
+    "payload_json": {"device_uuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "latitude": -7.25, "longitude": 112.75},
+    "payload_text": null
+  }],
+  "offset": 0,
+  "limit": 20,
+  "next_offset": null
+}
+```
+
+Error yang relevan: `400` untuk filter waktu/pagination tidak valid, `401` untuk
+bearer tidak valid, dan `403` bila `Device.Read` tidak tersedia. GET ini tidak
+menerbitkan event, tidak menulis telemetry, dan tidak menandai pesan sebagai
+terproses. Setelah operator memilih pesan, pembuatan Device dan binding tetap
+dilakukan melalui endpoint master yang terpisah.
+
+`GET /mqtt/topics` mengembalikan `topic`, `event_count`, `latest_received_at`,
+serta pagination. `topic_prefix` opsional membatasi prefix topic. Endpoint ini
+juga read-only dan hanya merangkum pesan yang sudah tersimpan.
 
 ### Contoh pengiriman
 

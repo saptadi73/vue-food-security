@@ -1,64 +1,151 @@
 ﻿# Perubahan kontrak frontend
 
-## 2026-09-20 - Klarifikasi Master Device IoT dan Binding GPS Armada
+## 2026-09-22 - QR batch receiving dipersistenkan dan normalisasi scan
 
-- `/master/devices` kini berlabel **Device IoT** dan menjelaskan bahwa halaman
-  ini menampung semua device GPS, sensor makanan, sensor storage, dan telemetry.
-- `/master/device-bindings` kini berlabel **Binding GPS Armada** dengan field
-  `Device GPS` dan `Armada/Kendaraan`; halaman ini khusus relasi GPS-armada untuk
-  live tracking. Sensor suhu tidak dibinding ke armada di halaman ini.
+- `POST /api/v1/receivings` membuat QR default
+  `fsos:raw-material-batch:<raw_material_batch_id>` jika `items[].qr_code` tidak
+  dikirim. Nilai dikembalikan pada `data.items[].batch.qr_code` dan dipakai saat
+  mencetak label.
+- Resolver batch memangkas whitespace hasil kamera sebelum lookup.
+- Resolver paket juga memangkas whitespace sebelum memvalidasi
+  `fsos:package:<UUID>`; permission, tenant isolation, dan status error tetap.
+- Frontend penerimaan tidak lagi membuat `QR-<kode batch>` saat input QR kosong.
+  Nilai `null` dikirim agar backend menerbitkan identitas kanonik, lalu label selalu
+  memakai `data.items[].batch.qr_code` dari response/list API.
+- Scanner pengeluaran bahan dan scanner sumber produksi sekarang selalu memakai
+  `GET /api/v1/raw-material-batches/resolve`; pencarian daftar dan shortcut UUID
+  tidak lagi dipakai sebagai pengganti validasi QR tenant-scoped.
 
-## 2026-09-20 - Pilih Device existing sebelum membuat binding MQTT
+## 2026-09-21 - Fallback jarak tracking dan binding GPS idempoten
 
-- Panel binding MQTT sekarang memuat Device ACTIVE yang sudah ada sesuai tipe
-  event. Pengguna dapat memilih Device existing; sistem memperbarui topic dan
-  selector event/sensor tanpa membuat duplikat.
-- Form nama/hardware dan aksi create hanya digunakan jika Device baru diperlukan.
+- Tracking delivery tetap mengisi jarak/durasi estimasi berbasis garis lurus jika
+  Google Maps tidak dikonfigurasi atau gagal; koordinat tetap wajib.
+- Binding MQTT GPS tidak lagi gagal saat device sudah terikat ke armada yang sama.
+  Jika device memiliki binding armada lain, binding aktif diperbarui.
 
-## 2026-09-20 - Form Device dengan pilihan tipe dan keterangan field
+## 2026-09-21 - Scan QR bahan saat mulai produksi
 
-- Field `device_type` pada Master Perangkat sekarang berupa pilihan terarah:
-  `GPS`, `FOOD_TEMPERATURE`, `TEMPERATURE`, atau `HUMIDITY`.
-- `zone_id`, UUID publik, firmware, hardware, MQTT topic, selector event/sensor,
-  dan last online diberi keterangan bahwa field tersebut opsional serta contoh
-  penggunaannya. Zona hanya disarankan untuk device yang terkait storage.
-- Zona penempatan kini hanya mengambil zona aktif.
+- Ditambahkan `GET /api/v1/raw-material-batches/resolve?qr_code=...` untuk
+  menerjemahkan QR batch bahan menjadi identitas batch pada tenant aktif.
+- Modal `Mulai masak / pakai bahan` sekarang memiliki scanner kamera QR. Setelah
+  QR terbaca, frontend otomatis mengisi batch ID, mengambil versi terbaru, memilih
+  storage yang memiliki stok, dan mengisi quantity tersedia.
 
-## 2026-09-20 - Debug response discovery MQTT
+## 2026-09-21 - Upload foto inspeksi penerimaan bahan
 
-- Halaman `/monitoring/mqtt-bindings` menampilkan debug aman untuk request
-  `GET /api/v1/mqtt/topics`: endpoint, status/state, jumlah item, kode error,
-  `request_id`, dan `correlation_id`.
-- Access token, tenant credential, password, dan payload sensitif tidak ditampilkan.
+- Ditambahkan `POST /api/v1/uploads/receiving-photo` untuk upload multipart foto
+  JPEG/PNG/WebP maksimal 10 MiB dengan permission `Receiving.Write`.
+- Form penerimaan memilih file lokal dan mengirim `reference` hasil upload ke
+  `items[].photo`; pengguna tidak perlu mengisi path manual.
+- Ditambahkan `GET /api/v1/uploads/receiving-photo/{file_id}` dengan permission
+  `Receiving.Read` untuk mengambil foto pada tenant yang sama.
 
-## 2026-09-20 - Binding sensor makanan pada production dan holding
+## 2026-09-20 - Perbaikan validasi parent Storage Zone
 
-- Form complete Production Batch sekarang dapat memilih device aktif bertipe
-  `FOOD_TEMPERATURE`, `TEMPERATURE`, atau `FOOD_SENSOR` melalui field
-  `food_sensor_device_uuid`.
-- Form start holding pada halaman Paket sekarang meminta sensor makanan opsional;
-  backend membuat binding phase `HOLDING` ke package tersebut.
-- Telemetry suhu makanan dapat diarahkan ke `production_batch_uuid` atau
-  `package_uuid`, dan backend memvalidasi binding sensor aktif sebelum menyimpan.
+- Validasi `PUT /api/v1/storage-zones/{identifier}` sekarang mengambil
+  `Storage.kitchen_id` untuk memeriksa dapur induk. Sebelumnya query mengambil
+  `Storage.storage_id` lalu membandingkannya dengan `Kitchen.kitchen_id`,
+  sehingga parent yang valid selalu dianggap tidak aktif.
 
-## 2026-09-20 - Penamaan Binding MQTT Device
+## 2026-09-20 - Perbaikan update Device dengan zona
 
-- Label navigasi, judul route, dan judul halaman diubah dari **Binding MQTT Armada**
-  menjadi **Binding MQTT Device**. Fungsi binding GPS ke armada tetap tersedia.
+- `PUT /api/v1/devices/{identifier}` tidak lagi mengakses kolom `status` yang
+  tidak tersedia pada `StorageZone`; Device dengan zona penempatan dapat diedit
+  kembali selama zonanya belum dihapus dan masih satu tenant.
 
-## 2026-09-20 - Halaman discovery dan binding MQTT armada
+## 2026-09-20 - Pemisahan identitas Device dan binding MQTT
 
-- Frontend menambahkan halaman `/monitoring/mqtt-bindings` untuk alur topic →
-  event → Device GPS → binding ke armada aktif.
-- Halaman memakai `GET /api/v1/mqtt/topics` untuk daftar topic dan
-  `GET /api/v1/mqtt/events?topic=...` untuk daftar event pada topic terpilih.
-- Setelah event dipilih, frontend membuat Device ACTIVE dengan `device_uuid`
-  valid dari payload bila tersedia, `mqtt_topic`, `mqtt_event`, dan `mqtt_sensor`
-  dari event terpilih. Event GPS kemudian membuat binding melalui
-  `POST /api/v1/device-bindings`; event sensor suhu membuat Device sensor tanpa
-  binding armada untuk dipilih saat production/holding.
-- Live ingestion dijalankan backend secara opt-in melalui konfigurasi MQTT worker;
-  halaman ini tetap memakai discovery API untuk konfigurasi binding.
+- Form Master Device tidak lagi meminta MQTT topic, selector event/sensor, atau
+  `last_online` sebagai input.
+- MQTT binding diatur melalui halaman Binding MQTT Device; `last_online` hanya
+  ditampilkan sebagai data telemetry.
+- Saat PUT device dari form identitas, field MQTT yang sudah terbinding tetap
+  dipertahankan.
+
+## 2026-09-20 - Klarifikasi master kendaraan dan GPS
+
+- Field tipe kendaraan pada master kendaraan sekarang menggunakan dropdown
+  terkontrol.
+- Latitude/longitude kendaraan diberi label posisi awal/fallback; lokasi live
+  berasal dari telemetry GPS melalui `DeviceBinding` pada endpoint
+  `/api/v1/device-bindings`.
+- Field `gps_device` tetap tersedia untuk kompatibilitas data lama, tetapi
+  binding operasional baru dilakukan melalui Binding GPS Armada.
+
+## 2026-09-20 - Nama pemasok dan bahan pada relasi supplier-material
+
+- `GET /api/v1/supplier-materials` dan detail/create/update response kini
+  menyertakan `supplier_code`, `supplier_name`, `material_code`, dan
+  `material_name` hasil join master tenant.
+- Request tetap memakai `supplier_id` dan `raw_material_id`; frontend menampilkan
+  nama/kode dan menyimpan UUID hanya sebagai identitas internal.
+
+## 2026-09-20 - Klarifikasi endpoint Device dan Binding GPS Armada
+
+- `GET/POST /api/v1/devices` ditegaskan sebagai master seluruh Device IoT.
+- `GET/POST/PUT/DELETE /api/v1/device-bindings` ditegaskan khusus binding
+  Device GPS aktif ke Vehicle/Armada aktif; service backend menolak device
+  non-GPS atau vehicle nonaktif.
+- `GET /api/v1/devices` menambah filter query opsional `device_type`; frontend
+  menggunakannya agar pilihan Device pada Binding GPS Armada hanya menampilkan
+  Device bertipe GPS.
+
+## 2026-09-20 - MQTT live consumer FSOS gateway
+
+- Consumer backend mendukung payload JSON `fsos/#`, menyimpan pesan ke
+  `mqtt_message_log`, dan mengubah payload valid menjadi `gps_log` atau
+  `temperature_log` dengan `mqtt_message_id`.
+- Device sekarang memiliki selector opsional `mqtt_event` dan `mqtt_sensor`.
+  Ini wajib dipakai bila beberapa event berbagi topic `fsos`; topic khusus seperti
+  `fsos/suhu1` cukup memakai `mqtt_topic`.
+- GPS dihubungkan melalui `DeviceBinding` ke vehicle. Sensor makanan memakai
+  `FoodSensorBinding` aktif untuk production/holding; sensor lain dapat memakai
+  `zone_id` device untuk menemukan storage.
+- Worker hanya aktif dengan `MQTT_CONSUMER_ENABLED=true` dan `MQTT_TENANT_ID`.
+  Reconnect otomatis; payload invalid/null tidak ditulis sebagai pembacaan valid.
+
+## 2026-09-20 - Binding sensor makanan production dan holding
+
+- `POST /api/v1/production-batches/{identifier}/complete` menerima
+  `food_sensor_device_uuid` opsional. Device harus aktif, berada pada tenant yang
+  sama, dan bertipe `FOOD_TEMPERATURE`, `TEMPERATURE`, atau `FOOD_SENSOR`.
+- `POST /api/v1/packages/{identifier}/holding/start` menerima `device_uuid`
+  opsional dengan validasi device yang sama.
+- Binding disimpan sebagai fase `PRODUCTION` atau `HOLDING`. Ingest suhu ke
+  `POST /api/v1/telemetry/temperatures` wajib menyertakan tepat satu target:
+  `production_batch_uuid` untuk fase production atau `package_uuid` untuk fase
+  holding; device yang tidak memiliki binding aktif ditolak.
+- Migrasi `20260920_0033_food_sensor_binding` menambah tabel binding dan kolom
+  target pada `temperature_log`. Data sensor menjadi bukti aktual append-only;
+  tidak ada worker MQTT live baru dalam perubahan ini.
+
+## 2026-09-20 - Discovery event MQTT tersimpan
+
+- Menambahkan `GET /api/v1/mqtt/events` dengan permission `Device.Read` untuk
+  menampilkan pesan MQTT yang sudah tersimpan di `mqtt_message_log`, terisolasi
+  per tenant dan mendukung filter topic, processed, rentang waktu serta pagination.
+- Endpoint bersifat read-only: tidak terhubung ke broker, tidak membuat Device atau
+  binding, tidak menandai pesan processed, dan tidak menyediakan live discovery.
+- Payload UTF-8 JSON dikembalikan sebagai `payload_json`; teks non-JSON dibatasi
+  4096 karakter pada `payload_text`; payload biner tidak diekspos.
+- Menambahkan `GET /api/v1/mqtt/topics` untuk daftar topic unik, jumlah event,
+  waktu event terbaru, prefix filter, dan pagination. Keduanya bukan live broker
+  discovery; Device dan binding tetap dibuat melalui master API.
+
+## 2026-09-21 - Perbaikan transaksi consumer MQTT
+
+- Migrasi `20260921_0035` mengizinkan transisi terkontrol `mqtt_message_log.processed` dari false ke true setelah temperature/GPS log berhasil ditulis. Payload, topic, tenant, identitas, transisi balik, DELETE dan TRUNCATE tetap ditolak.
+- Memperbaiki rollback pesan untuk device yang sudah cocok topic/event/sensor. Endpoint dan payload frontend tidak berubah; setelah migrasi, event baru dapat tampil di Monitor Suhu dan tracking.
+
+## 2026-09-21 - Seed baseline frontend tanpa transaksi
+
+- `backend/scripts/seed_demo_ready.py --masters-only --username frontend_admin` menyiapkan tenant/login/permission dan master operasional `FSOS_DEMO` tanpa receiving, production batch, package, delivery, telemetry sample, complaint atau recall.
+- Mode ini memungkinkan frontend menguji workflow dari awal tanpa pilihan MO kedaluwarsa. Tidak ada perubahan endpoint atau kontrak HTTP.
+
+## 2026-09-21 - Pembersihan pilihan production batch stale
+
+- Halaman frontend `Paket & QR` sekarang menghapus pilihan production batch dari dropdown ketika endpoint allocation mengembalikan `404`, membersihkan query `batch` yang tidak valid, dan memilih batch `COMPLETED` berikutnya bila tersedia.
+- Error selain `404` tetap ditampilkan dan tidak menghapus pilihan karena record mungkin masih ada tetapi gagal dimuat akibat permission, konflik data, atau gangguan server. Tidak ada perubahan endpoint maupun kontrak backend.
 
 ## 2026-09-17 - Routing jalan fleet Google Routes API
 

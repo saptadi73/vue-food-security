@@ -97,14 +97,7 @@ async function resolve(value: string) {
   acceptedReceiptQuantity.value = null
   try {
     if (props.mode === 'material') {
-      const page = await fsos.operations.rawMaterialBatches.list({
-        search: payload,
-        offset: 0,
-        limit: 20,
-      })
-      materialResult.value =
-        page.items.find((item) => item.qr_code === payload || item.batch_code === payload) ?? null
-      if (!materialResult.value) throw new Error('Batch bahan tidak ditemukan.')
+      materialResult.value = await fsos.operations.rawMaterialBatches.resolve(payload)
       toast.success('Batch bahan ditemukan', { description: materialResult.value.batch_code })
     } else {
       packageResult.value = await fsos.packages.resolve(payload)
@@ -417,5 +410,4 @@ function onDetected(value: string) {
     </div>
   </div>
 </template>
-
 

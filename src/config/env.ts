@@ -1,4 +1,5 @@
-const rawOrigin = (import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:8000').replace(/\/+$/, '')
+const configuredOrigin = import.meta.env.VITE_API_ORIGIN?.replace(/\/+$/, '') ?? ''
+const rawOrigin = configuredOrigin || (import.meta.env.DEV ? 'http://localhost:8000' : '')
 const rawPrefix = (import.meta.env.VITE_API_PREFIX ?? '/api/v1').replace(/\/+$/, '')
 const useProxy = import.meta.env.VITE_USE_PROXY
   ? import.meta.env.VITE_USE_PROXY === 'true'
@@ -7,10 +8,10 @@ const useProxy = import.meta.env.VITE_USE_PROXY
 export const env = {
   appName: 'FSOS',
   appLongName: 'Food Security & Traceability Operations System',
-  apiOrigin: rawOrigin,
+  apiOrigin: rawOrigin || 'same-origin',
   apiPrefix: rawPrefix,
-  /** Saat proxy aktif, request memakai path relatif sehingga origin browser tidak berubah. */
-  apiBase: useProxy ? rawPrefix : `${rawOrigin}${rawPrefix}`,
+  /** Tanpa origin eksplisit, production memakai reverse proxy same-origin di /api. */
+  apiBase: useProxy || !rawOrigin ? rawPrefix : `${rawOrigin}${rawPrefix}`,
   useProxy,
   requestTimeoutMs: Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 20000),
   defaultTenant: import.meta.env.VITE_DEFAULT_TENANT ?? '',

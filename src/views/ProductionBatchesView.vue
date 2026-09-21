@@ -179,10 +179,7 @@ async function onBatchQrDetected(payload: string) {
   saving.value = true
   formErrors.value = {}
   try {
-    const prefix = 'fsos:raw-material-batch:'
-    const batch = payload.startsWith(prefix)
-      ? await fsos.operations.rawMaterialBatches.detail(payload.slice(prefix.length))
-      : await fsos.operations.rawMaterialBatches.resolve(payload.trim())
+    const batch = await fsos.operations.rawMaterialBatches.resolve(payload.trim())
     source.raw_material_batch_id = batch.raw_material_batch_id
     await loadStartRowStock(index)
     toast.success('QR bahan terbaca', { description: batch.batch_code })

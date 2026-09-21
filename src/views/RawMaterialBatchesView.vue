@@ -77,8 +77,6 @@ const list = usePaginatedList<RawMaterialBatchData>(
   },
 )
 
-const qrPreview = computed(() => form.value.qr_code.trim() || `QR-${form.value.batch_code.trim()}`)
-
 function toIsoFromLocal(value: string) {
   return new Date(value).toISOString()
 }
@@ -165,7 +163,7 @@ async function submitCreate() {
           condition: form.value.condition.trim() || null,
           photo: photoReference,
           expired_date: form.value.expired_date || null,
-          qr_code: qrPreview.value,
+          qr_code: form.value.qr_code.trim() || null,
         },
       ],
     })
@@ -449,8 +447,8 @@ async function cancelDraft(row: RawMaterialBatchData) {
           class="sm:col-span-2"
           label="Payload QR batch"
           :maxlength="255"
-          :placeholder="qrPreview"
-          hint="Kosongkan untuk memakai QR-&lt;kode batch&gt;. QR dirender/print di frontend."
+          placeholder="Kosongkan untuk dibuat otomatis oleh backend"
+          hint="Jika kosong, backend menerbitkan fsos:raw-material-batch:&lt;UUID&gt;. Cetak nilai QR dari response API."
           :error="formErrors.qr_code"
         />
       </form>

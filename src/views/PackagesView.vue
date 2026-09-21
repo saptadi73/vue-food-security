@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
@@ -23,6 +23,7 @@ import { useToastStore } from '@/stores/toast'
 import { formatDateTime, formatDecimal, formatDuration, shortId } from '@/utils/format'
 
 const route = useRoute()
+const router = useRouter()
 const toast = useToastStore()
 const confirm = useConfirm()
 const references = useReferenceOptions()
@@ -125,8 +126,23 @@ async function loadAllocation() {
   try {
     allocation.value = await fsos.packages.allocation(id)
   } catch (error) {
-    if (isApiError(error) && error.kind !== 'not_found')
+    if (isApiError(error) && error.kind === 'not_found') {
+      productionOptions.value = productionOptions.value.filter((option) => option.value !== id)
+      const nextId = productionOptions.value[0]?.value
+      batchId.value = typeof nextId === 'string' ? nextId : ''
+      if (route.query.batch === id) {
+        const query = { ...route.query }
+        delete query.batch
+        await router.replace({ query })
+      }
+      toast.warning('Batch produksi tidak lagi tersedia', {
+        description: 'Pilihan lama telah dihapus dari daftar.',
+      })
+      list.reset()
+      if (batchId.value) await loadAllocation()
+    } else {
       toast.fromError(error, 'Gagal membaca alokasi')
+    }
   } finally {
     allocationLoading.value = false
   }
@@ -329,7 +345,12 @@ watch(
 onMounted(async () => {
   if (typeof route.query.batch === 'string') batchId.value = route.query.batch
   await loadProductionOptions()
-  if (!batchId.value) {
+  if (!batchId.value || !productionOptions.value.some((option) => option.value === batchId.value)) {
+    if (batchId.value && route.query.batch === batchId.value) {
+      const query = { ...route.query }
+      delete query.batch
+      await router.replace({ query })
+    }
     const firstBatchId = productionOptions.value[0]?.value
     if (typeof firstBatchId === 'string') batchId.value = firstBatchId
   }

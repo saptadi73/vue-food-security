@@ -21,7 +21,11 @@ Semua response backend memakai envelope:
   code: number
   message: string
   data: T | null
-  errors: { field: string; message: string }[]
+  errors: {
+    field: string
+    message: string
+  }
+  ;[]
   meta: object
 }
 ```
@@ -39,6 +43,23 @@ CORS:
 - Development/testing: backend menangani CORS memakai `CORS_ORIGINS`.
 - Production: CORS ditangani NGINX/reverse proxy; backend tidak memasang CORS middleware saat `ENVIRONMENT=production`.
 
+## Build production
+
+Secara default, hasil build memanggil backend nyata melalui path same-origin
+`/api/v1`. Konfigurasikan NGINX agar meneruskan path `/api` ke FastAPI.
+
+Jika frontend dan backend memakai domain berbeda, buat `.env.production` sebelum
+build:
+
+```env
+VITE_API_ORIGIN=https://api.foodsecurity.online
+VITE_API_PREFIX=/api/v1
+VITE_USE_PROXY=false
+```
+
+Nilai `VITE_*` disisipkan saat `npm run build`, sehingga perubahan alamat API
+memerlukan build ulang.
+
 ## Demo login
 
 Seed backend `seed_demo_ready.py` menyediakan akun demo berikut:
@@ -52,7 +73,7 @@ Password: DemoFrontend123!
 Login mengirim field `tenant`, bukan wajib `tenant_id`:
 
 ```json
-{"tenant":"FSOS_DEMO","username":"frontend-admin","password":"DemoFrontend123!"}
+{ "tenant": "FSOS_DEMO", "username": "frontend-admin", "password": "DemoFrontend123!" }
 ```
 
 ## Area UI yang tersedia
@@ -100,7 +121,3 @@ npm run dev
 ```sh
 npm run build
 ```
-
-
-
-
