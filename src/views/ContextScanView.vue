@@ -10,6 +10,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import QrScanner from '@/components/qr/QrScanner.vue'
 import PackageSummary from '@/components/domain/PackageSummary.vue'
 import SignaturePadDialog from '@/components/signature/SignaturePadDialog.vue'
+import FoodTemperaturePicker from '@/components/temperature/FoodTemperaturePicker.vue'
 import { fsos, isApiError } from '@/api'
 import type { PackageData, RawMaterialBatchData } from '@/api/modules/operations'
 import { useToastStore } from '@/stores/toast'
@@ -389,7 +390,7 @@ function onDetected(value: string) {
               <AppSelect v-model="receiptForm.accepted" label="Keputusan" required :options="acceptedOptions" :error="receiptErrors.accepted" />
             </div>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <AppInput v-model="receiptForm.temperature" label="Suhu manual (C)" inputmode="decimal" :error="receiptErrors.temperature" />
+              <div class="space-y-2"><AppInput v-model="receiptForm.temperature" label="Suhu manual (C)" inputmode="decimal" :error="receiptErrors.temperature" /><FoodTemperaturePicker v-model="receiptForm.temperature" context-type="SCHOOL_RECEIVING" :context-id="packageResult?.package_id" :disabled="receiptSaving" /></div>
               <AppInput v-model="receiptForm.photo" label="Referensi foto" placeholder="receipt/photo-001.jpg" :error="receiptErrors.photo" />
             </div>
             <AppInput v-model="receiptForm.notes" label="Catatan" placeholder="Wajib jika ditolak atau jumlah berbeda" :error="receiptErrors.notes" />

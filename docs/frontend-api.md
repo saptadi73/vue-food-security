@@ -6454,3 +6454,6 @@ Layar `/config/users` memakai `GET /users`, `GET /users/roles`, `POST /users`, d
 ## Signature pad receiving dan complaint (2026-09-24)
 
 Komponen `SignaturePadDialog` memakai Pointer Events sehingga mendukung mouse, stylus, dan sentuhan. Canvas hanya diekspor ke PNG saat konfirmasi dan tidak disimpan pada local/session storage. Dialog memeriksa evidence target lebih dahulu: evidence existing menampilkan snapshot signer, waktu server, purpose, SHA-256 dan tombol verify; target tanpa evidence menampilkan canvas dan peringatan immutable. Setelah school receiving sukses dialog terbuka otomatis dengan purpose `SCHOOL_RECEIVING_ACKNOWLEDGEMENT`. Daftar complaint menampilkan aksi untuk permission `Complaint.Sign` dengan purpose `COMPLAINT_REPORTER_ATTESTATION`.
+## Food probe on-demand (2026-09-24)
+
+Komponen `FoodTemperaturePicker` hanya menampilkan device ACTIVE dengan `device_type=FOOD_TEMPERATURE` dan `zone_id=null`. Klik **Ambil dari sensor** memanggil `POST /food-temperature-measurements` dengan freshness 60 detik, mengisi model suhu sampai dua desimal, dan menampilkan waktu, usia, serta ID log sumber. Operator masih harus menyimpan form. Komponen dipakai pada receiving bahan, complete production, create package, dan school receiving. Device tidak ditampilkan pada dashboard storage karena tidak mempunyai zone/storage binding.

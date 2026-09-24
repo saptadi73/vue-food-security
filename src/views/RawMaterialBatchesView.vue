@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import FoodTemperaturePicker from '@/components/temperature/FoodTemperaturePicker.vue'
 import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -436,6 +437,7 @@ async function cancelDraft(row: RawMaterialBatchData) {
           placeholder="3.20"
           :error="formErrors.temperature"
         />
+        <FoodTemperaturePicker v-model="form.temperature" context-type="RECEIVING" :disabled="saving" />
         <AppInput
           v-model="form.expired_date"
           label="Expired date"

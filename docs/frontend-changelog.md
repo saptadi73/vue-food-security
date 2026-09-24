@@ -964,3 +964,7 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Menambahkan typed `signaturesApi`, registry endpoint, dan canvas signature responsif.
 - Integrasi school receiving membuka signature setelah receipt sukses; complaint menyediakan aksi signature per laporan.
 - UI menampilkan metadata CAPTURED/VERIFIED dan hash, tidak menyimpan image atau path storage secara lokal. Preview yang dimaksud sebelum submit adalah canvas; byte evidence tetap dilindungi bearer backend.
+## 2026-09-24 - Pengukuran food probe on-demand
+- Menambahkan typed `foodTemperatureApi` dan komponen picker reusable.
+- Empat form suhu manual kini dapat diisi dari sampel MQTT food probe terbaru; input manual tetap tersedia sebagai fallback.
+- Selector membatasi device khusus tanpa zone dan menampilkan freshness/log sumber sebelum transaksi dikonfirmasi.

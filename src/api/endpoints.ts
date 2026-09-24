@@ -159,6 +159,10 @@ export const endpoints = {
     markFailed: (id: string) => `/notifications/${id}/mark-failed`,
   },
 
+  foodTemperatureMeasurements: {
+    latest: () => '/food-temperature-measurements',
+  },
+
   signatures: {
     target: (entityType: string, entityId: string) => `/signatures/targets/${entityType}/${entityId}`,
     verify: (signatureId: string) => `/signatures/evidence/${signatureId}/verify`,

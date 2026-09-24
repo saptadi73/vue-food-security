@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import FoodTemperaturePicker from '@/components/temperature/FoodTemperaturePicker.vue'
 import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -480,6 +481,7 @@ async function cancelBatch(row: ProductionBatchData) {
         <AppInput :model-value="completeTarget?.batch_code ?? ''" label="Kode batch" readonly />
         <AppInput v-model="completeForm.actual_quantity" label="Hasil aktual" required inputmode="decimal" :error="formErrors.actual_quantity" />
         <AppInput v-model="completeForm.initial_temperature" label="Suhu inti makanan (C)" inputmode="decimal" :error="formErrors.initial_temperature" />
+        <FoodTemperaturePicker v-model="completeForm.initial_temperature" context-type="PRODUCTION_COMPLETE" :context-id="completeTarget?.production_batch_id" :disabled="saving" />
         <AppSelect
           v-model="completeForm.food_sensor_device_uuid"
           label="Sensor makanan (opsional)"

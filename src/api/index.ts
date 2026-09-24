@@ -15,11 +15,13 @@ import { traceabilityApi } from './modules/traceability'
 import { systemApi } from './modules/system'
 import { usersApi } from './modules/users'
 import { signaturesApi } from './modules/signatures'
+import { foodTemperatureApi } from './modules/foodTemperature'
 
 export const fsos = {
   auth: authApi,
   users: usersApi,
   signatures: signaturesApi,
+  foodTemperature: foodTemperatureApi,
   system: systemApi,
   dashboard: dashboardApi,
   masters: mastersApi,

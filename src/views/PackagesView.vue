@@ -1,8 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import FoodTemperaturePicker from '@/components/temperature/FoodTemperaturePicker.vue'
 import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppCard from '@/components/ui/AppCard.vue'
@@ -655,6 +656,7 @@ onMounted(async () => {
           hint="Opsional, maksimal 2 desimal."
           :error="formErrors.initial_temperature"
         />
+        <FoodTemperaturePicker v-model="form.initial_temperature" context-type="PACKAGING" :context-id="allocation?.production_batch_id" :disabled="saving" />
       </form>
 
       <template #footer>
