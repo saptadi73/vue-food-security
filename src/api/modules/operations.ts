@@ -312,6 +312,18 @@ export interface DeliveryTracking {
   calculated_at: string
 }
 
+export interface DeliveryHistory {
+  delivery_id: Uuid
+  vehicle: Uuid
+  status: DeliveryStatus
+  window_started_at: string
+  window_ended_at: string
+  geofence_radius_meters: number
+  truncated: boolean
+  points: Array<{ gps_log_id: Uuid; recorded_at: string; latitude: DecimalString; longitude: DecimalString; speed: DecimalString | null; heading: DecimalString | null; nearest_school_id: Uuid | null; distance_to_nearest_meters: DecimalString | null; inside_geofence: boolean }>
+  geofence_events: Array<{ event_type: 'ENTER' | 'EXIT'; school_id: Uuid; gps_log_id: Uuid; recorded_at: string; distance_meters: DecimalString }>
+}
+
 export interface DeliveryVehicleSummary extends AuditFields {
   vehicle: Uuid
   delivery_count: number
@@ -490,6 +502,8 @@ export const operationsApi = {
     detail: (id: string) => api.get<DeliveryDetail>(endpoints.deliveries.detail(id)),
     create: (input: DeliveryInput) => api.post<DeliveryDetail>(endpoints.deliveries.create(), input),
     tracking: (id: string) => api.get<DeliveryTracking>(endpoints.deliveries.tracking(id)),
+    history: (id: string, radiusMeters = 200, limit = 500) =>
+      api.get<DeliveryHistory>(endpoints.deliveries.history(id, { radius_meters: radiusMeters, limit })),
     depart: (id: string, input: DeliveryDepartInput) =>
       api.post<DeliveryDetail>(endpoints.deliveries.depart(id), input),
     complete: (id: string, expectedVersion: number) =>
@@ -517,7 +531,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 

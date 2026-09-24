@@ -7,7 +7,7 @@ import AppSelect, { type SelectOption } from '@/components/ui/AppSelect.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { fsos, isApiError } from '@/api'
-import type { DeliveryTracking } from '@/api/modules/operations'
+import type { DeliveryHistory, DeliveryTracking } from '@/api/modules/operations'
 import type { Kitchen, School } from '@/api/modules/masters'
 import { env } from '@/config/env'
 import { formatDateTime, shortId } from '@/utils/format'
@@ -19,6 +19,7 @@ const deliveryId = ref('')
 const deliveryOptions = ref<SelectOption[]>([])
 const deliveriesLoading = ref(false)
 const tracking = ref<DeliveryTracking | null>(null)
+const history = ref<DeliveryHistory | null>(null)
 const loading = ref(false)
 const mapElement = ref<HTMLElement | null>(null)
 const kitchen = ref<Kitchen | null>(null)
@@ -192,7 +193,10 @@ async function refresh() {
   if (!deliveryId.value) return
   loading.value = true
   try {
-    tracking.value = await fsos.operations.deliveries.tracking(deliveryId.value)
+    ;[tracking.value, history.value] = await Promise.all([
+      fsos.operations.deliveries.tracking(deliveryId.value),
+      fsos.operations.deliveries.history(deliveryId.value),
+    ])
     const gps = tracking.value.latest_gps
     if (gps && window.google?.maps && mapElement.value) {
       const position = { lat: Number(gps.latitude), lng: Number(gps.longitude) }
@@ -210,14 +214,18 @@ async function refresh() {
 async function loadActiveDeliveries() {
   deliveriesLoading.value = true
   try {
-    const page = await fsos.operations.deliveries.list({ status: 'IN_TRANSIT', offset: 0, limit: 100 })
-    deliveryOptions.value = page.items.map((item) => ({
+    const [active, completed] = await Promise.all([
+      fsos.operations.deliveries.list({ status: 'IN_TRANSIT', offset: 0, limit: 100 }),
+      fsos.operations.deliveries.list({ status: 'COMPLETED', offset: 0, limit: 100 }),
+    ])
+    const deliveries = [...active.items, ...completed.items]
+    deliveryOptions.value = deliveries.map((item) => ({
       value: item.delivery_id,
-      label: `Delivery ${shortId(item.delivery_id)} · Armada ${shortId(item.vehicle)}`,
+      label: `Delivery ${shortId(item.delivery_id)} · ${item.status} · Armada ${shortId(item.vehicle)}`,
     }))
 
     const requested = String(route.query.delivery ?? '')
-    if (requested && page.items.some((item) => item.delivery_id === requested)) {
+    if (requested && deliveries.some((item) => item.delivery_id === requested)) {
       deliveryId.value = requested
     }
   } catch (error) {
@@ -244,6 +252,7 @@ const locationText = computed(() => tracking.value?.latest_gps ? `${tracking.val
 watch(deliveryId, () => {
   if (!started) return
   tracking.value = null
+  history.value = null
   kitchen.value = null
   schools.value = []
   clearMapContext()
@@ -271,7 +280,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
           :options="deliveryOptions"
           :disabled="deliveriesLoading"
           placeholder="Pilih pengiriman yang sedang berjalan"
-          hint="Hanya delivery berstatus IN_TRANSIT yang ditampilkan."
+          hint="Delivery berjalan dan selesai tersedia untuk tracking serta riwayat."
         />
         <AppButton icon="lucide:refresh-cw" :loading="loading" :disabled="!deliveryId" @click="refresh">Perbarui</AppButton>
       </div>
@@ -286,5 +295,23 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       </AppCard>
       <AppCard title="Ringkasan tracking" icon="lucide:activity" :loading="loading"><EmptyState v-if="!tracking" compact icon="lucide:truck" title="Belum ada data" description="Pilih delivery dari daftar pengiriman aktif." /><dl v-else class="space-y-3 text-sm"><div><dt class="text-surface-500">Status</dt><dd class="font-semibold">{{ tracking.status }}</dd></div><div><dt class="text-surface-500">Lokasi terakhir</dt><dd class="font-mono text-xs">{{ locationText }}</dd></div><div><dt class="text-surface-500">Update GPS</dt><dd>{{ tracking.latest_gps ? formatDateTime(tracking.latest_gps.recorded_at) : '—' }}</dd></div><div><dt class="text-surface-500">Sisa jarak</dt><dd>{{ tracking.remaining_distance_km ?? '—' }} km</dd></div><div><dt class="text-surface-500">Sisa durasi</dt><dd>{{ tracking.remaining_duration_minutes ?? '—' }} menit</dd></div><div><dt class="text-surface-500">ETA</dt><dd>{{ tracking.estimated_arrival_time ? formatDateTime(tracking.estimated_arrival_time) : '—' }}</dd></div></dl></AppCard>
     </div>
+    <AppCard class="mt-4" title="Riwayat perjalanan & geofence" icon="lucide:route" :loading="loading">
+      <EmptyState v-if="!history" compact icon="lucide:map-pinned" title="Belum ada riwayat" description="Pilih delivery untuk membaca log GPS perjalanan." />
+      <div v-else class="space-y-4">
+        <div class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div><p class="text-surface-500">Radius</p><p class="font-semibold">{{ history.geofence_radius_meters }} m</p></div>
+          <div><p class="text-surface-500">Titik GPS</p><p class="font-semibold">{{ history.points.length }}</p></div>
+          <div><p class="text-surface-500">Enter/Exit</p><p class="font-semibold">{{ history.geofence_events.length }}</p></div>
+          <div><p class="text-surface-500">Status terakhir</p><p class="font-semibold">{{ history.points.at(-1)?.inside_geofence ? 'DI DALAM' : 'DI LUAR' }}</p></div>
+        </div>
+        <p v-if="history.truncated" class="text-xs text-warning-700">Riwayat dibatasi 500 titik terbaru.</p>
+        <div class="max-h-80 overflow-auto rounded-xl border border-surface-200 dark:border-surface-800">
+          <table class="w-full text-left text-xs">
+            <thead class="sticky top-0 bg-surface-50 dark:bg-surface-900"><tr><th class="p-3">Waktu</th><th class="p-3">Koordinat</th><th class="p-3">Jarak tujuan</th><th class="p-3">Geofence</th></tr></thead>
+            <tbody><tr v-for="point in history.points" :key="point.gps_log_id" class="border-t border-surface-100 dark:border-surface-800"><td class="p-3">{{ formatDateTime(point.recorded_at) }}</td><td class="p-3 font-mono">{{ point.latitude }}, {{ point.longitude }}</td><td class="p-3">{{ point.distance_to_nearest_meters ?? '—' }} m</td><td class="p-3 font-semibold">{{ point.inside_geofence ? 'INSIDE' : 'OUTSIDE' }}</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </AppCard>
   </div>
 </template>

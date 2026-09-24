@@ -124,6 +124,7 @@ export const endpoints = {
     byVehicle: (p?: QueryParams) => `/deliveries/packages/by-vehicle${q(p)}`,
     byDestination: (p?: QueryParams) => `/deliveries/packages/by-destination${q(p)}`,
     tracking: (id: string) => `/deliveries/${id}/tracking`,
+    history: (id: string, p?: QueryParams) => `/deliveries/${id}/history${q(p)}`,
     depart: (id: string) => `/deliveries/${id}/depart`,
     complete: (id: string) => `/deliveries/${id}/complete`,
     cancel: (id: string) => `/deliveries/${id}/cancel`,
@@ -184,7 +185,6 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-
 
 
 
