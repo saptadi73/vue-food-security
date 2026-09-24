@@ -312,6 +312,21 @@ export interface DeliveryTracking {
   calculated_at: string
 }
 
+export interface RouteEstimateInput {
+  origin_latitude: DecimalString
+  origin_longitude: DecimalString
+  destination_latitude: DecimalString
+  destination_longitude: DecimalString
+}
+
+export interface RouteEstimateData extends RouteEstimateInput {
+  provider: 'GOOGLE_ROUTES'
+  distance_km: DecimalString
+  duration_minutes: number
+  estimated_arrival_time: string
+  calculated_at: string
+}
+
 export interface DeliveryHistory {
   delivery_id: Uuid
   vehicle: Uuid
@@ -497,6 +512,8 @@ export const operationsApi = {
   },
   productionBatches: productionBatchesApi,
   deliveries: {
+    routeEstimate: (input: RouteEstimateInput) =>
+      api.post<RouteEstimateData>(endpoints.deliveries.routeEstimate(), input),
     list: (query: PageQuery & { kitchen_id?: Uuid; vehicle?: Uuid; driver?: Uuid; status?: DeliveryStatus } = {}) =>
       api.get<OffsetPage<DeliveryData>>(endpoints.deliveries.list(query)),
     detail: (id: string) => api.get<DeliveryDetail>(endpoints.deliveries.detail(id)),
@@ -531,7 +548,6 @@ export const operationsApi = {
   },
   packages: packagesApi,
 }
-
 
 
 

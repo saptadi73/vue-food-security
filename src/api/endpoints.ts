@@ -121,6 +121,7 @@ export const endpoints = {
   },
   deliveries: {
     ...collection('/deliveries'),
+    routeEstimate: () => '/deliveries/route-estimate',
     byVehicle: (p?: QueryParams) => `/deliveries/packages/by-vehicle${q(p)}`,
     byDestination: (p?: QueryParams) => `/deliveries/packages/by-destination${q(p)}`,
     tracking: (id: string) => `/deliveries/${id}/tracking`,
@@ -185,6 +186,5 @@ function collection(base: string): CollectionEndpoints {
 }
 
 export { q as buildQuery }
-
 
 
