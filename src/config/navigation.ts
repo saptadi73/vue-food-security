@@ -1,4 +1,4 @@
-﻿export interface NavItem {
+export interface NavItem {
   label: string
   to: string
   icon: string
@@ -139,6 +139,7 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'Holding Rule', to: '/config/holding-rules', icon: 'lucide:timer' },
       { label: 'Alarm Rule', to: '/config/alarm-rules', icon: 'lucide:bell-ring' },
+      { label: 'Administrasi User', to: '/config/users', icon: 'lucide:users', permission: 'User.Read' },
       { label: 'Diagnostik API', to: '/config/diagnostics', icon: 'lucide:activity' },
     ],
   },

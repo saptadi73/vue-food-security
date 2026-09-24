@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Registry path API - satu sumber kebenaran untuk seluruh pemanggilan HTTP.
  *
  * Aturan: tidak ada string path yang ditulis langsung di store/komponen.
@@ -32,6 +32,14 @@ export const endpoints = {
     refresh: () => '/auth/refresh',
     logout: () => '/auth/logout',
     me: () => '/auth/me',
+  },
+
+  users: {
+    list: (p?: QueryParams) => `/users${q(p)}`,
+    roles: () => '/users/roles',
+    detail: (id: string) => `/users/${id}`,
+    create: () => '/users',
+    update: (id: string) => `/users/${id}`,
   },
 
   dashboard: {
@@ -149,6 +157,12 @@ export const endpoints = {
     list: (p?: QueryParams) => `/notifications${q(p)}`,
     markSent: (id: string) => `/notifications/${id}/mark-sent`,
     markFailed: (id: string) => `/notifications/${id}/mark-failed`,
+  },
+
+  signatures: {
+    target: (entityType: string, entityId: string) => `/signatures/targets/${entityType}/${entityId}`,
+    verify: (signatureId: string) => `/signatures/evidence/${signatureId}/verify`,
+    image: (signatureId: string) => `/signatures/evidence/${signatureId}/image`,
   },
 
   // --- Traceability read-only ---

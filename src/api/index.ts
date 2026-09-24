@@ -13,9 +13,13 @@ import { complaintsApi, notificationsApi, recallsApi } from './modules/incidents
 import { alarmRulesApi, alarmsApi, deviceSessionsApi, holdingRulesApi, mqttApi } from './modules/telemetry'
 import { traceabilityApi } from './modules/traceability'
 import { systemApi } from './modules/system'
+import { usersApi } from './modules/users'
+import { signaturesApi } from './modules/signatures'
 
 export const fsos = {
   auth: authApi,
+  users: usersApi,
+  signatures: signaturesApi,
   system: systemApi,
   dashboard: dashboardApi,
   masters: mastersApi,

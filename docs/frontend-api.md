@@ -6447,3 +6447,10 @@ request, bukan agregat materialized, cache, event stream, alarm, atau indikator 
 
 
 
+
+## Administrasi user tenant (2026-09-24)
+
+Layar `/config/users` memakai `GET /users`, `GET /users/roles`, `POST /users`, dan `PUT /users/{id}`. Menu hanya tampil dengan `User.Read`; server tetap memeriksa `User.Write` dan `Role.Assign`. Form mendukung role jamak, assignment dapur/sekolah jamak, jabatan, status, password write-only, dan mengirim `expected_version` saat edit. Password edit yang kosong dikirim `null` agar hash tidak berubah. Error 409 ditampilkan dan daftar dimuat ulang setelah sukses.
+## Signature pad receiving dan complaint (2026-09-24)
+
+Komponen `SignaturePadDialog` memakai Pointer Events sehingga mendukung mouse, stylus, dan sentuhan. Canvas hanya diekspor ke PNG saat konfirmasi dan tidak disimpan pada local/session storage. Dialog memeriksa evidence target lebih dahulu: evidence existing menampilkan snapshot signer, waktu server, purpose, SHA-256 dan tombol verify; target tanpa evidence menampilkan canvas dan peringatan immutable. Setelah school receiving sukses dialog terbuka otomatis dengan purpose `SCHOOL_RECEIVING_ACKNOWLEDGEMENT`. Daftar complaint menampilkan aksi untuk permission `Complaint.Sign` dengan purpose `COMPLAINT_REPORTER_ATTESTATION`.

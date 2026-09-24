@@ -953,3 +953,14 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 
 
 
+
+## 2026-09-24 - Administrasi identitas operasional
+
+- Menambahkan typed `usersApi`, registry endpoint user, route/menu `/config/users`, dan halaman daftar serta create/edit user.
+- Pilihan lokasi memakai master dapur/sekolah ACTIVE; role berasal dari endpoint tenant. UI tidak menyimpan atau menampilkan password/hash.
+- Signature pad dan evidence receiving/incident tetap tahap berikutnya.
+## 2026-09-24 - Signature pad operasional
+
+- Menambahkan typed `signaturesApi`, registry endpoint, dan canvas signature responsif.
+- Integrasi school receiving membuka signature setelah receipt sukses; complaint menyediakan aksi signature per laporan.
+- UI menampilkan metadata CAPTURED/VERIFIED dan hash, tidak menyimpan image atau path storage secara lokal. Preview yang dimaksud sebelum submit adalah canvas; byte evidence tetap dilindungi bearer backend.

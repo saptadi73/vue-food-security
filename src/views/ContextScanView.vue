@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -9,6 +9,7 @@ import AppSelect, { type SelectOption } from '@/components/ui/AppSelect.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import QrScanner from '@/components/qr/QrScanner.vue'
 import PackageSummary from '@/components/domain/PackageSummary.vue'
+import SignaturePadDialog from '@/components/signature/SignaturePadDialog.vue'
 import { fsos, isApiError } from '@/api'
 import type { PackageData, RawMaterialBatchData } from '@/api/modules/operations'
 import { useToastStore } from '@/stores/toast'
@@ -24,6 +25,8 @@ const scanning = ref(false)
 const packageResult = ref<PackageData | null>(null)
 const materialResult = ref<RawMaterialBatchData | null>(null)
 const receiptSaving = ref(false)
+const receiptSignatureOpen = ref(false)
+const receiptSignatureTarget = ref('')
 const consumptionSaving = ref(false)
 const receiptAccepted = ref(false)
 const acceptedReceiptQuantity = ref<string | null>(null)
@@ -226,6 +229,8 @@ async function submitSchoolReceiving() {
       notes: receiptForm.value.notes.trim() || null,
     })
     toast.success('Penerimaan sekolah tercatat', { description: shortId(receipt.school_receiving_id) })
+    receiptSignatureTarget.value = receipt.school_receiving_id
+    receiptSignatureOpen.value = true
     acceptedReceiptQuantity.value = receipt.accepted ? receipt.received_quantity : null
     packageResult.value = {
       ...item,
@@ -408,6 +413,13 @@ function onDetected(value: string) {
         </div>
       </AppCard>
     </div>
+    <SignaturePadDialog
+      v-if="receiptSignatureTarget"
+      v-model:open="receiptSignatureOpen"
+      entity-type="SCHOOL_RECEIVING"
+      :entity-id="receiptSignatureTarget"
+      purpose="SCHOOL_RECEIVING_ACKNOWLEDGEMENT"
+    />
   </div>
 </template>
 

@@ -5,13 +5,19 @@ import DataTable, { type TableColumn } from '@/components/ui/DataTable.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import SignaturePadDialog from '@/components/signature/SignaturePadDialog.vue'
 import { fsos } from '@/api'
 import type { ComplaintRecord } from '@/api/modules/incidents'
 import { usePaginatedList } from '@/composables/usePaginatedList'
 import { useToastStore } from '@/stores/toast'
+import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, shortId } from '@/utils/format'
 
 const toast = useToastStore()
+const auth = useAuthStore()
+const signatureOpen = ref(false)
+const signatureTarget = ref('')
+function openSignature(row: ComplaintRecord) { signatureTarget.value = row.complaint_id; signatureOpen.value = true }
 
 const columns: TableColumn[] = [
   { key: 'complaint_id', label: 'Keluhan', mono: true },
@@ -81,6 +87,7 @@ async function openReport(row: ComplaintRecord) {
       <template #cell-created_at="{ value }">{{ formatDateTime(value as string) }}</template>
 
       <template #actions="{ row }">
+        <AppButton v-if="auth.can('Complaint.Sign')" size="xs" variant="outline" icon="lucide:signature" @click="openSignature(row)">Tanda tangan</AppButton>
         <AppButton size="xs" variant="outline" icon="lucide:file-text" @click="openReport(row)">
           Laporan
         </AppButton>
@@ -106,5 +113,12 @@ async function openReport(row: ComplaintRecord) {
         <AppButton variant="subtle" @click="report = null">Tutup</AppButton>
       </template>
     </AppModal>
+    <SignaturePadDialog
+      v-if="signatureTarget"
+      v-model:open="signatureOpen"
+      entity-type="COMPLAINT"
+      :entity-id="signatureTarget"
+      purpose="COMPLAINT_REPORTER_ATTESTATION"
+    />
   </div>
 </template>

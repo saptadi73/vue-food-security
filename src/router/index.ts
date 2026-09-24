@@ -1,4 +1,4 @@
-﻿import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -152,6 +152,12 @@ const router = createRouter({
           name: 'alarm-rules',
           component: () => import('@/views/config/AlarmRulesView.vue'),
           meta: { title: 'Alarm Rule' },
+        },
+        {
+          path: 'config/users',
+          name: 'user-administration',
+          component: () => import('@/views/config/UserAdministrationView.vue'),
+          meta: { title: 'Administrasi User' },
         },
         {
           path: 'config/diagnostics',
