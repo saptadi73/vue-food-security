@@ -6471,3 +6471,6 @@ Komponen `FoodTemperaturePicker` hanya menampilkan device ACTIVE dengan `device_
 ### Tampilan hasil food probe (2026-10-01)
 
 Hasil pengukuran ditampilkan pada panel `Suhu terukur` dengan angka besar, satuan Celsius, status sampel segar, nama sensor, waktu, usia sampel, dan ID log sumber. Label device menggunakan pemisah ASCII agar tidak menghasilkan karakter mojibake. Nilai dua desimal tetap disalin ke field suhu transaksi.
+## Pelaporan dan peringatan batch incident (2026-10-01)
+
+Pada Cek Kemasan dan Penerimaan Sekolah, frontend memanggil `GET /complaints/package/{package_id}/alerts`. Complaint OPEN/INVESTIGATING dari kemasan mana pun dalam production batch yang sama menghasilkan warning sebelum penerimaan/konsumsi. Tombol `Laporkan insiden makanan` selalu tersedia, bukan hanya saat expired. Kategori meliputi kerusakan, kontaminasi, parasit, hewan/serangga, sakit, expired, suhu, dan lainnya. Form membawa package/sekolah, mendukung upload foto, membuat complaint, lalu membuka signature pelapor. Detail Keluhan memuat report dan `GET /complaints/{id}/batch-impact`: seluruh kemasan batch, delivery, tujuan, receiving, dan consumption.

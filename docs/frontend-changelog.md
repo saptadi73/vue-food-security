@@ -989,3 +989,25 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Menghapus karakter mojibake pada nama device, satuan, dan metadata pengukuran.
 - Menambahkan panel hasil suhu yang lebih jelas dengan angka besar dan provenance sampel.
 - Perubahan berlaku pada receiving, production complete, packaging, dan school receiving melalui komponen reusable yang sama.
+## 2026-10-01 - Batch incident warning dan report
+
+- Menambahkan pelaporan insiden dari scan kemasan untuk berbagai jenis bahaya, upload foto, dan signature pelapor.
+- Menampilkan warning lintas kemasan production batch yang sama saat scan/penerimaan.
+- Laporan complaint menampilkan ringkasan dan tabel dampak kemasan, delivery, tujuan, penerimaan, dan konsumsi.
+## 2026-10-01 - Verifikasi build incident dan fleet
+
+- Build produksi frontend lulus dengan pemeriksaan TypeScript dan bundling Vite.
+- Halaman scan, complaint batch-impact, upload foto, signature, food probe, dan fleet terkompilasi dalam kontrak API terkini.
+- Tidak ada perubahan payload frontend pada tahap verifikasi ini.
+
+## 2026-10-01 - Data demo batch incident
+
+- Seed exhibition incident kini menjamin complaint aktif `CONTAMINATION`/`HIGH`/`OPEN` pada `MO-INCIDENT-001`.
+- Scan `PKG-INCIDENT-001` menampilkan incident asal; kemasan `PKG-INCIDENT-002` sampai `PKG-INCIDENT-004` digunakan untuk demo warning lintas batch dan laporan tujuan terdampak.
+- Foto dan signature tidak dipalsukan oleh seed; keduanya tetap dicapture melalui form dan endpoint operasional frontend.
+
+## 2026-10-01 - Rekonsiliasi seed incident lama
+
+- Seed exhibition dapat dijalankan ulang untuk mengaktifkan warning batch pada data demo lama tanpa cleanup tenant.
+- Foto, signature, tujuan, penerimaan, konsumsi, recall, dan withdrawal yang sudah tersedia tetap dipertahankan.
+- Tidak ada perubahan kontrak API atau penyesuaian kode frontend pada tahap ini.

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AppCard from '@/components/ui/AppCard.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect, { type SelectOption } from '@/components/ui/AppSelect.vue'
@@ -25,9 +26,27 @@ const manualValue = ref('')
 const scanning = ref(false)
 const packageResult = ref<PackageData | null>(null)
 const materialResult = ref<RawMaterialBatchData | null>(null)
+const incidentAlerts = ref<Record<string, unknown> | null>(null)
+const incidentOpen = ref(false)
+const incidentSaving = ref(false)
+const incidentSchool = ref('')
+const incidentPhoto = ref<File | null>(null)
+const incidentForm = ref({ category: 'DAMAGE', severity: 'HIGH', description: '' })
+const incidentCategories: SelectOption[] = [
+  { value: 'DAMAGE', label: 'Makanan / kemasan rusak' }, { value: 'CONTAMINATION', label: 'Kontaminasi' },
+  { value: 'PARASITE', label: 'Parasit' }, { value: 'ANIMAL', label: 'Hewan / serangga' },
+  { value: 'ILLNESS', label: 'Keluhan sakit' }, { value: 'EXPIRED', label: 'Kedaluwarsa / holding habis' },
+  { value: 'TEMPERATURE', label: 'Suhu tidak sesuai' }, { value: 'OTHER', label: 'Lainnya' },
+]
+const incidentSeverities: SelectOption[] = [
+  { value: 'LOW', label: 'LOW' }, { value: 'MEDIUM', label: 'MEDIUM' },
+  { value: 'HIGH', label: 'HIGH' }, { value: 'CRITICAL', label: 'CRITICAL' },
+]
 const receiptSaving = ref(false)
 const receiptSignatureOpen = ref(false)
 const receiptSignatureTarget = ref('')
+const signatureOpen = ref(false)
+const signatureTarget = ref('')
 const consumptionSaving = ref(false)
 const receiptAccepted = ref(false)
 const acceptedReceiptQuantity = ref<string | null>(null)
@@ -99,6 +118,8 @@ async function resolve(value: string) {
   materialResult.value = null
   receiptAccepted.value = false
   acceptedReceiptQuantity.value = null
+  incidentAlerts.value = null
+  incidentSchool.value = ''
   try {
     if (props.mode === 'material') {
       materialResult.value = await fsos.operations.rawMaterialBatches.resolve(payload)
@@ -144,6 +165,17 @@ async function resolve(value: string) {
             })
           }
         }
+      }
+      try {
+        incidentAlerts.value = await fsos.complaints.packageAlerts(packageResult.value.package_id)
+        if (props.mode === 'traceability' && !incidentSchool.value) {
+          const incidentContext = await fsos.packages.deliveryContext(packageResult.value.package_id)
+          incidentSchool.value = incidentContext.school ?? ''
+        } else if (props.mode === 'school-receiving') {
+          incidentSchool.value = receiptForm.value.school
+        }
+      } catch {
+        incidentAlerts.value = null
       }
       toast.success('Paket ditemukan', { description: packageResult.value.package_code })
     }
@@ -330,6 +362,33 @@ async function submitConsumption() {
     consumptionSaving.value = false
   }
 }
+function openIncidentReport() {
+  const expired = packageResult.value?.timer_status === 'EXPIRED' || packageResult.value?.remaining_seconds === 0
+  incidentForm.value = { category: expired ? 'EXPIRED' : 'DAMAGE', severity: expired ? 'CRITICAL' : 'HIGH', description: '' }
+  incidentPhoto.value = null
+  incidentOpen.value = true
+}
+async function submitIncident() {
+  if (!packageResult.value || !incidentSchool.value || !incidentForm.value.description.trim()) {
+    return toast.warning('Sekolah tujuan dan deskripsi insiden wajib tersedia')
+  }
+  incidentSaving.value = true
+  try {
+    let photo: string | null = null
+    if (incidentPhoto.value) photo = (await fsos.complaints.uploadPhoto(incidentPhoto.value)).reference
+    const complaint = await fsos.complaints.create({
+      package_id: packageResult.value.package_id, school_id: incidentSchool.value,
+      category: incidentForm.value.category, severity: incidentForm.value.severity,
+      description: incidentForm.value.description.trim(), photo,
+    })
+    incidentOpen.value = false
+    signatureTarget.value = complaint.complaint_id
+    signatureOpen.value = true
+    incidentAlerts.value = await fsos.complaints.packageAlerts(packageResult.value.package_id)
+    toast.success('Insiden batch berhasil dilaporkan', { description: shortId(complaint.complaint_id) })
+  } catch (error) { toast.fromError(error, 'Gagal melaporkan insiden') }
+  finally { incidentSaving.value = false }
+}
 function onDetected(value: string) {
   manualValue.value = value
   void resolve(value)
@@ -358,7 +417,15 @@ function onDetected(value: string) {
       </AppCard>
 
       <AppCard title="Hasil scan" icon="lucide:scan-line" :loading="scanning" class="lg:col-span-2">
-        <PackageSummary v-if="packageResult" :item="packageResult" />
+        <template v-if="packageResult">
+          <PackageSummary :item="packageResult" />
+          <div v-if="incidentAlerts?.has_active_incident" class="mt-4 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-800 dark:text-rose-200">
+            <p class="text-xs font-bold uppercase tracking-wider">Peringatan insiden batch</p>
+            <p class="mt-1 text-sm font-semibold">Kemasan lain dari batch produksi yang sama telah dilaporkan bermasalah.</p>
+            <p class="mt-1 text-xs">Severity tertinggi: {{ incidentAlerts.highest_severity }}. Tahan penerimaan atau konsumsi sampai pemeriksaan selesai.</p>
+          </div>
+          <AppButton v-if="mode === 'traceability' || mode === 'school-receiving'" class="mt-3" block variant="danger" icon="lucide:triangle-alert" @click="openIncidentReport">Laporkan insiden makanan</AppButton>
+        </template>
         <div v-else-if="materialResult" class="space-y-3 text-sm">
           <div><p class="text-xs text-surface-500">Kode batch</p><p class="font-mono font-bold">{{ materialResult.batch_code }}</p></div>
           <div><p class="text-xs text-surface-500">Status</p><p class="font-semibold">{{ materialResult.status }}</p></div>
@@ -414,6 +481,12 @@ function onDetected(value: string) {
         </div>
       </AppCard>
     </div>
+    <AppModal v-model:open="incidentOpen" size="lg" :busy="incidentSaving" title="Laporkan insiden makanan" icon="lucide:triangle-alert" description="Gunakan untuk kedaluwarsa, kerusakan, kontaminasi, parasit, hewan/serangga, suhu tidak sesuai, atau keluhan sakit.">
+      <div class="grid gap-4 py-2"><div class="rounded-xl bg-rose-500/10 p-3 text-sm"><strong>{{ packageResult?.package_code }}</strong><p class="mt-1 text-xs">Laporan akan memberi warning pada semua kemasan dalam batch produksi yang sama.</p></div><AppSelect v-model="incidentForm.category" label="Jenis insiden" :options="incidentCategories" required /><AppSelect v-model="incidentForm.severity" label="Severity" :options="incidentSeverities" required /><AppInput v-model="incidentSchool" label="School ID" required placeholder="Tujuan delivery paket" /><label class="text-sm font-medium">Deskripsi kejadian<textarea v-model="incidentForm.description" required rows="4" class="mt-1 w-full rounded-xl border border-surface-300 bg-transparent p-3 dark:border-surface-700" placeholder="Jelaskan kondisi, lokasi temuan, dan tindakan awal" /></label><label class="text-sm font-medium">Foto bukti (opsional)<input type="file" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full text-sm" @change="incidentPhoto = ($event.target as HTMLInputElement).files?.[0] ?? null" /></label></div>
+      <template #footer><AppButton variant="subtle" @click="incidentOpen=false">Batal</AppButton><AppButton variant="danger" icon="lucide:triangle-alert" :loading="incidentSaving" @click="submitIncident">Kirim laporan insiden</AppButton></template>
+    </AppModal>
+
+    <SignaturePadDialog v-if="signatureTarget" v-model:open="signatureOpen" entity-type="COMPLAINT" :entity-id="signatureTarget" purpose="COMPLAINT_REPORTER_ATTESTATION" />
     <SignaturePadDialog
       v-if="receiptSignatureTarget"
       v-model:open="receiptSignatureOpen"

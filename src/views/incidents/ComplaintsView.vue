@@ -89,6 +89,7 @@ const list = usePaginatedList<ComplaintRecord>((query) => fsos.complaints.list(q
 })
 
 const report = ref<ComplaintReport | null>(null)
+const batchImpact = ref<Record<string, any> | null>(null)
 const reportLoading = ref(false)
 const showRawJson = ref(false)
 
@@ -116,9 +117,15 @@ function signerLabel(receivedBy?: ReceivedBy | null): string {
 async function openReport(row: ComplaintRecord) {
   reportLoading.value = true
   report.value = null
+  batchImpact.value = null
   showRawJson.value = false
   try {
-    report.value = (await fsos.complaints.report(row.complaint_id)) as ComplaintReport
+    const [detail, impact] = await Promise.all([
+      fsos.complaints.report(row.complaint_id),
+      fsos.complaints.batchImpact(row.complaint_id),
+    ])
+    report.value = detail as ComplaintReport
+    batchImpact.value = impact
   } catch (error) {
     report.value = null
     toast.fromError(error, 'Gagal memuat laporan insiden')
@@ -245,6 +252,16 @@ async function openReport(row: ComplaintRecord) {
           </DataTable>
         </AppCard>
 
+        <AppCard v-if="batchImpact" title="Dampak batch produksi" icon="lucide:boxes" flush>
+          <div class="grid grid-cols-2 gap-3 border-b border-surface-200 p-4 sm:grid-cols-4 dark:border-surface-800">
+            <div><p class="text-xs text-surface-500">Kemasan terdampak</p><p class="text-xl font-black">{{ batchImpact.affected_package_count ?? 0 }}</p></div>
+            <div><p class="text-xs text-surface-500">Sudah dialokasikan</p><p class="text-xl font-black">{{ batchImpact.delivered_count ?? 0 }}</p></div>
+            <div><p class="text-xs text-surface-500">Sudah diterima</p><p class="text-xl font-black text-amber-600">{{ batchImpact.received_count ?? 0 }}</p></div>
+            <div><p class="text-xs text-surface-500">Sudah dikonsumsi</p><p class="text-xl font-black text-rose-600">{{ batchImpact.consumed_count ?? 0 }}</p></div>
+          </div>
+          <div class="overflow-x-auto"><table class="w-full min-w-[720px] text-left text-xs"><thead class="bg-surface-50 text-surface-500 dark:bg-surface-850"><tr><th class="p-3">Kemasan</th><th>Tujuan</th><th>Delivery</th><th>Penerimaan</th><th>Konsumsi</th></tr></thead><tbody><tr v-for="item in batchImpact.packages ?? []" :key="item.package_id" class="border-t border-surface-100 dark:border-surface-800"><td class="p-3 font-mono font-semibold">{{ item.package_code }}</td><td>{{ item.school_name || 'Belum dialokasikan' }}</td><td><AppBadge :status="item.delivery_status || item.package_status" /></td><td>{{ item.school_receiving_id ? formatDateTime(item.received_time) : 'Belum diterima' }}</td><td>{{ item.consumption_id ? formatDateTime(item.consumed_at) : 'Belum dikonsumsi' }}</td></tr></tbody></table></div>
+        </AppCard>
+
         <div>
           <AppButton size="xs" variant="subtle" :icon="showRawJson ? 'lucide:chevron-up' : 'lucide:code'" @click="showRawJson = !showRawJson">
             {{ showRawJson ? 'Sembunyikan data mentah' : 'Tampilkan data mentah (JSON)' }}
@@ -252,7 +269,7 @@ async function openReport(row: ComplaintRecord) {
           <pre
             v-if="showRawJson"
             class="mt-2 max-h-[40vh] overflow-auto rounded-xl bg-surface-50 p-4 font-mono text-[11px] leading-relaxed text-surface-700 dark:bg-surface-850 dark:text-surface-200"
-            >{{ JSON.stringify(report, null, 2) }}</pre
+            >{{ JSON.stringify({ report, batch_impact: batchImpact }, null, 2) }}</pre
           >
         </div>
       </div>

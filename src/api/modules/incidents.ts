@@ -35,6 +35,9 @@ export const complaintsApi = {
   reports: (query: PageQuery & Record<string, unknown> = {}) =>
     api.get<OffsetPage<Record<string, unknown>>>(endpoints.complaints.reports(query)),
   report: (id: string) => api.get<Record<string, unknown>>(endpoints.complaints.report(id)),
+  batchImpact: (id: string) => api.get<Record<string, unknown>>(endpoints.complaints.batchImpact(id)),
+  packageAlerts: (packageId: string) => api.get<Record<string, unknown>>(endpoints.complaints.packageAlerts(packageId)),
+  uploadPhoto: (file: File) => { const body = new FormData(); body.append('file', file); return api.post<{ file_id: string; reference: string; content_type: string; size_bytes: number }>(endpoints.uploads.complaintPhoto(), body) },
 }
 
 export const recallsApi = {

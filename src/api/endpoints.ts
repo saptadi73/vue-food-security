@@ -147,6 +147,8 @@ export const endpoints = {
     ...collection('/complaints'),
     reports: (p?: QueryParams) => `/complaints/reports${q(p)}`,
     report: (id: string) => `/complaints/${id}/report`,
+    batchImpact: (id: string) => `/complaints/${id}/batch-impact`,
+    packageAlerts: (packageId: string) => `/complaints/package/${packageId}/alerts`,
   },
   recalls: {
     ...collection('/recalls'),
