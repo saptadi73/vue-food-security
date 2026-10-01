@@ -984,3 +984,8 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Menambahkan typed `foodTemperatureApi` dan komponen picker reusable.
 - Empat form suhu manual kini dapat diisi dari sampel MQTT food probe terbaru; input manual tetap tersedia sebagai fallback.
 - Selector membatasi device khusus tanpa zone dan menampilkan freshness/log sumber sebelum transaksi dikonfirmasi.
+## 2026-10-01 - Perbaikan tampilan food probe
+
+- Menghapus karakter mojibake pada nama device, satuan, dan metadata pengukuran.
+- Menambahkan panel hasil suhu yang lebih jelas dengan angka besar dan provenance sampel.
+- Perubahan berlaku pada receiving, production complete, packaging, dan school receiving melalui komponen reusable yang sama.

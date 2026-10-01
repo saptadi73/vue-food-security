@@ -105,6 +105,7 @@ export const endpoints = {
   },
   uploads: {
     receivingPhoto: () => '/uploads/receiving-photo',
+    complaintPhoto: () => '/uploads/complaint-photo',
   },
   rawMaterialBatches: {
     ...collection('/raw-material-batches'),

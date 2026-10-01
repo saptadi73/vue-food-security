@@ -6468,3 +6468,6 @@ Komponen `SignaturePadDialog` memakai Pointer Events sehingga mendukung mouse, s
 ## Food probe on-demand (2026-09-24)
 
 Komponen `FoodTemperaturePicker` hanya menampilkan device ACTIVE dengan `device_type=FOOD_TEMPERATURE` dan `zone_id=null`. Klik **Ambil dari sensor** memanggil `POST /food-temperature-measurements` dengan freshness 60 detik, mengisi model suhu sampai dua desimal, dan menampilkan waktu, usia, serta ID log sumber. Operator masih harus menyimpan form. Komponen dipakai pada receiving bahan, complete production, create package, dan school receiving. Device tidak ditampilkan pada dashboard storage karena tidak mempunyai zone/storage binding.
+### Tampilan hasil food probe (2026-10-01)
+
+Hasil pengukuran ditampilkan pada panel `Suhu terukur` dengan angka besar, satuan Celsius, status sampel segar, nama sensor, waktu, usia sampel, dan ID log sumber. Label device menggunakan pemisah ASCII agar tidak menghasilkan karakter mojibake. Nilai dua desimal tetap disalin ke field suhu transaksi.
