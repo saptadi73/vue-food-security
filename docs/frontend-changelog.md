@@ -1,5 +1,21 @@
 ﻿# Perubahan kontrak frontend
 
+## 2026-09-30 - Alamat sekolah dan identitas penanda tangan pada laporan insiden
+
+- `GET /api/v1/complaints/{identifier}/report` (dan `GET /api/v1/complaints/reports`)
+  menambahkan `school_name`/`school_address` pada `current_location`,
+  `delivery_manifest[]` dan `school_receivings[]`. Tidak perlu panggilan terpisah
+  ke endpoint School untuk mengetahui lokasi penerimaan.
+- `school_receivings[]` menambahkan `received_by`: `null` bila belum ada digital
+  signature untuk receipt tersebut, atau objek `signature_id`, `signed_by`,
+  `signed_at`, `signer_snapshot` (`fullname`, `job_title`, `roles`) hasil
+  `POST /api/v1/signatures/targets/school_receiving/{id}`. Ini menjawab "diterima
+  oleh siapa" saat investigasi, melengkapi field `accepted` boolean yang sudah ada.
+- Halaman Keluhan (`ComplaintsView.vue`) memperlihatkan panel terstruktur (lokasi,
+  penerima, manifest, konsumsi) di atas dump JSON mentah; dump JSON tetap tersedia
+  untuk field yang belum divisualisasikan.
+- Tidak ada migrasi skema; perubahan murni pada query laporan komplain (read-only).
+
 ## 2026-09-24 - Riwayat perjalanan dan geofence fleet
 
 - Ditambahkan `GET /api/v1/deliveries/{identifier}/history` dengan permission
