@@ -1037,3 +1037,9 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Identity sesi kini membaca `tenant_code` additive dari `/auth/me`.
 - Tombol Reset demo hanya terlihat bagi `ADMIN` yang sedang login pada `FSOS_EXPO`.
 - `FSOS_EXPO_INCIDENT` tidak menampilkan cleanup sehingga skenario incident/recall tetap terlindungi; backend tetap melakukan guard final.
+
+## 2026-10-02 - Manual pengguna dan panduan demo DOCX
+
+- Menambahkan `docs/FSOS-Manual-Pengguna-dan-Panduan-Demo.docx` untuk onboarding dan operasional frontend end-to-end.
+- Manual mencakup master data, binding IoT/MQTT, transaksi receiving sampai penerimaan sekolah, live tracking, incident/recall, troubleshooting, serta runbook `FSOS_EXPO` dan `FSOS_EXPO_INCIDENT`.
+- Dokumen tidak memuat password, token, atau API key; kredensial demo diperoleh dari administrator.
