@@ -1,4 +1,4 @@
-import { api } from '../client'
+﻿import { api } from '../client'
 import { endpoints } from '../endpoints'
 import type { OffsetPage, PageQuery, Uuid } from '../types'
 
@@ -9,6 +9,41 @@ export interface ComplaintRecord extends Record<string, unknown> {
   created_at?: string
 }
 
+
+export interface PackageIncidentAlertItem {
+  complaint_id: Uuid
+  category: string
+  severity: string
+  status: string
+  description: string
+  reported_at: string
+  source_package_id: Uuid
+}
+
+export interface IncidentRecommendedAction {
+  code: string
+  label: string
+  required: boolean
+}
+
+export interface PackageIncidentAlert {
+  package_id: Uuid
+  production_batch_id: Uuid
+  production_batch_code: string
+  has_active_incident: boolean
+  highest_severity: string | null
+  primary_complaint_id: Uuid | null
+  alerts: PackageIncidentAlertItem[]
+  affected_package_count: number
+  delivered_count: number
+  received_count: number
+  consumed_count: number
+  recalled_count: number
+  recall_id: Uuid | null
+  recall_status: 'NONE' | 'OPEN' | 'EXECUTED' | 'COMPLETED'
+  recall_reason: string | null
+  recommended_actions: IncidentRecommendedAction[]
+}
 export interface RecallRecord extends Record<string, unknown> {
   recall_id: Uuid
   status?: string
@@ -36,7 +71,7 @@ export const complaintsApi = {
     api.get<OffsetPage<Record<string, unknown>>>(endpoints.complaints.reports(query)),
   report: (id: string) => api.get<Record<string, unknown>>(endpoints.complaints.report(id)),
   batchImpact: (id: string) => api.get<Record<string, unknown>>(endpoints.complaints.batchImpact(id)),
-  packageAlerts: (packageId: string) => api.get<Record<string, unknown>>(endpoints.complaints.packageAlerts(packageId)),
+  packageAlerts: (packageId: string) => api.get<PackageIncidentAlert>(endpoints.complaints.packageAlerts(packageId)),
   uploadPhoto: (file: File) => { const body = new FormData(); body.append('file', file); return api.post<{ file_id: string; reference: string; content_type: string; size_bytes: number }>(endpoints.uploads.complaintPhoto(), body) },
 }
 
@@ -64,3 +99,4 @@ export const notificationsApi = {
   markFailed: (id: string, input: Record<string, unknown> = {}) =>
     api.post<NotificationRecord>(endpoints.notifications.markFailed(id), input),
 }
+

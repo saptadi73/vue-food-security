@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -26,7 +26,8 @@ const manualValue = ref('')
 const scanning = ref(false)
 const packageResult = ref<PackageData | null>(null)
 const materialResult = ref<RawMaterialBatchData | null>(null)
-const incidentAlerts = ref<Record<string, unknown> | null>(null)
+const incidentAlerts = ref<Awaited<ReturnType<typeof fsos.complaints.packageAlerts>> | null>(null)
+const primaryIncident = computed(() => incidentAlerts.value?.alerts[0] ?? null)
 const incidentOpen = ref(false)
 const incidentSaving = ref(false)
 const incidentSchool = ref('')
@@ -429,7 +430,7 @@ function onDetected(value: string) {
         <div v-else-if="materialResult" class="space-y-3 text-sm">
           <div><p class="text-xs text-surface-500">Kode batch</p><p class="font-mono font-bold">{{ materialResult.batch_code }}</p></div>
           <div><p class="text-xs text-surface-500">Status</p><p class="font-semibold">{{ materialResult.status }}</p></div>
-          <div><p class="text-xs text-surface-500">Kedaluwarsa</p><p>{{ materialResult.expired_date ?? '—' }}</p></div>
+          <div><p class="text-xs text-surface-500">Kedaluwarsa</p><p>{{ materialResult.expired_date ?? 'â€”' }}</p></div>
           <p class="rounded-xl bg-surface-50 p-3 text-xs text-surface-500 dark:bg-surface-850">Batch ditemukan. Lanjutkan proses pengeluaran bahan dengan memilih storage dan jumlah yang akan dikeluarkan.</p>
         </div>
         <EmptyState v-else compact icon="lucide:qr-code" title="Belum ada hasil" description="Pindai QR sesuai aktivitas pada halaman ini." />
@@ -496,4 +497,5 @@ function onDetected(value: string) {
     />
   </div>
 </template>
+
 

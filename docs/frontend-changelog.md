@@ -1025,3 +1025,9 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Legenda peta membedakan dapur asal, sekolah tujuan, dan armada terkini; tidak ada perubahan kontrak API.
 
 - Koreksi type lokal Google Maps: Marker listener dan InfoWindow kini terdeklarasi sehingga type-check popup marker lulus.
+
+## 2026-10-02 - Warning incident lengkap saat scan
+
+- Hasil scan kemasan menampilkan penyebab incident, kode batch produksi, severity, complaint sumber, dan waktu laporan.
+- Ringkasan dampak menampilkan jumlah kemasan terdampak, terkirim, diterima, dikonsumsi, dan recalled beserta status/alasan recall.
+- Tindakan wajib berasal dari backend dan tombol laporan mengarahkan operator ke modul Keluhan menggunakan complaint ID aktif.
