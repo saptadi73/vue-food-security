@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -84,6 +84,38 @@ function coordinate(item: { latitude: string | null; longitude: string | null })
   return Number.isFinite(position.lat) && Number.isFinite(position.lng) ? position : null
 }
 
+function escapeHtml(value: string | number | null | undefined) {
+  return String(value ?? 'Tidak tersedia')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
+function markerPopup(title: string, subtitle: string, position: Position, address?: string | null) {
+  return `<div style="min-width:220px;padding:4px 2px;color:#172033;font-family:Arial,sans-serif">
+    <strong style="display:block;font-size:14px;margin-bottom:5px">${escapeHtml(title)}</strong>
+    <span style="display:block;color:#526078;margin-bottom:6px">${escapeHtml(subtitle)}</span>
+    ${address ? `<span style="display:block;margin-bottom:6px">${escapeHtml(address)}</span>` : ''}
+    <code style="font-size:11px;color:#526078">${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}</code>
+  </div>`
+}
+
+function bindPopup(marker: MarkerInstance, content: () => string) {
+  marker.addListener('click', () => {
+    if (!map || !window.google?.maps) return
+    infoWindow ??= new window.google.maps.InfoWindow()
+    infoWindow.setContent(content())
+    infoWindow.open({ map, anchor: marker })
+  })
+}
+
+const vehicleIcon = {
+  url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#059669" stroke="#ffffff" stroke-width="3"/><path d="M13 20h22l5 8v9h-4a5 5 0 0 1-10 0h-7a5 5 0 0 1-10 0H7V25h6zm3 3v7h17l-4-7zm-2 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm17 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="#ffffff"/></svg>`)}`,
+  scaledSize: { width: 52, height: 52 },
+  anchor: { x: 26, y: 26 },
+}
 function movedEnough(current: Position, previous: Position | null) {
   if (!previous) return true
   const latKm = (current.lat - previous.lat) * 111.32
@@ -201,7 +233,23 @@ async function refresh() {
     if (gps && window.google?.maps && mapElement.value) {
       const position = { lat: Number(gps.latitude), lng: Number(gps.longitude) }
       if (!map) map = new window.google.maps.Map(mapElement.value, { center: position, zoom: 14, mapTypeControl: false })
-      if (!vehicleMarker) vehicleMarker = new window.google.maps.Marker({ map, position, title: 'Lokasi armada', label: 'A' })
+      if (!vehicleMarker) {
+        vehicleMarker = new window.google.maps.Marker({
+          map,
+          position,
+          title: 'Posisi armada terkini',
+          icon: vehicleIcon,
+          zIndex: 100,
+        })
+        bindPopup(vehicleMarker, () => markerPopup(
+          'Posisi armada terkini',
+          `Delivery ${shortId(deliveryId.value)} - ${tracking.value?.status ?? 'Status tidak tersedia'}`,
+          tracking.value?.latest_gps
+            ? { lat: Number(tracking.value.latest_gps.latitude), lng: Number(tracking.value.latest_gps.longitude) }
+            : position,
+          tracking.value?.latest_gps ? `Update GPS: ${formatDateTime(tracking.value.latest_gps.recorded_at)}` : null,
+        ))
+      }
       else vehicleMarker.setPosition(position)
       drawContextMarkers()
       await drawRoute(position)
@@ -221,7 +269,7 @@ async function loadActiveDeliveries() {
     const deliveries = [...active.items, ...completed.items]
     deliveryOptions.value = deliveries.map((item) => ({
       value: item.delivery_id,
-      label: `Delivery ${shortId(item.delivery_id)} · ${item.status} · Armada ${shortId(item.vehicle)}`,
+      label: `Delivery ${shortId(item.delivery_id)} Â· ${item.status} Â· Armada ${shortId(item.vehicle)}`,
     }))
 
     const requested = String(route.query.delivery ?? '')
@@ -289,11 +337,11 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       <AppCard class="lg:col-span-2" title="Rute armada ke sekolah" icon="lucide:map-pin" flush>
         <div ref="mapElement" class="min-h-96 bg-surface-100 dark:bg-surface-850"><EmptyState v-if="!env.googleMapsApiKey" compact icon="lucide:key-round" title="Google Maps API key belum tersedia" description="Isi VITE_GOOGLE_MAPS_API_KEY pada environment frontend." /></div>
         <div class="flex flex-wrap items-center gap-4 border-t border-surface-200 px-4 py-3 text-xs text-surface-600 dark:border-surface-700 dark:text-surface-300">
-          <span><strong>A</strong> Armada</span><span><strong>D</strong> Dapur</span><span><strong>1..n</strong> Sekolah tujuan</span>
+          <span>🚚 Armada terkini</span><span><strong>D</strong> Dapur asal</span><span><strong>1..n</strong> Sekolah tujuan</span><span>Klik marker untuk detail</span>
           <span v-if="routeMessage" class="text-warning-700 dark:text-warning-300">{{ routeMessage }}</span>
         </div>
       </AppCard>
-      <AppCard title="Ringkasan tracking" icon="lucide:activity" :loading="loading"><EmptyState v-if="!tracking" compact icon="lucide:truck" title="Belum ada data" description="Pilih delivery dari daftar pengiriman aktif." /><dl v-else class="space-y-3 text-sm"><div><dt class="text-surface-500">Status</dt><dd class="font-semibold">{{ tracking.status }}</dd></div><div><dt class="text-surface-500">Lokasi terakhir</dt><dd class="font-mono text-xs">{{ locationText }}</dd></div><div><dt class="text-surface-500">Update GPS</dt><dd>{{ tracking.latest_gps ? formatDateTime(tracking.latest_gps.recorded_at) : '—' }}</dd></div><div><dt class="text-surface-500">Sisa jarak</dt><dd>{{ tracking.remaining_distance_km ?? '—' }} km</dd></div><div><dt class="text-surface-500">Sisa durasi</dt><dd>{{ tracking.remaining_duration_minutes ?? '—' }} menit</dd></div><div><dt class="text-surface-500">ETA</dt><dd>{{ tracking.estimated_arrival_time ? formatDateTime(tracking.estimated_arrival_time) : '—' }}</dd></div></dl></AppCard>
+      <AppCard title="Ringkasan tracking" icon="lucide:activity" :loading="loading"><EmptyState v-if="!tracking" compact icon="lucide:truck" title="Belum ada data" description="Pilih delivery dari daftar pengiriman aktif." /><dl v-else class="space-y-3 text-sm"><div><dt class="text-surface-500">Status</dt><dd class="font-semibold">{{ tracking.status }}</dd></div><div><dt class="text-surface-500">Lokasi terakhir</dt><dd class="font-mono text-xs">{{ locationText }}</dd></div><div><dt class="text-surface-500">Update GPS</dt><dd>{{ tracking.latest_gps ? formatDateTime(tracking.latest_gps.recorded_at) : 'â€”' }}</dd></div><div><dt class="text-surface-500">Sisa jarak</dt><dd>{{ tracking.remaining_distance_km ?? 'â€”' }} km</dd></div><div><dt class="text-surface-500">Sisa durasi</dt><dd>{{ tracking.remaining_duration_minutes ?? 'â€”' }} menit</dd></div><div><dt class="text-surface-500">ETA</dt><dd>{{ tracking.estimated_arrival_time ? formatDateTime(tracking.estimated_arrival_time) : 'â€”' }}</dd></div></dl></AppCard>
     </div>
     <AppCard class="mt-4" title="Riwayat perjalanan & geofence" icon="lucide:route" :loading="loading">
       <EmptyState v-if="!history" compact icon="lucide:map-pinned" title="Belum ada riwayat" description="Pilih delivery untuk membaca log GPS perjalanan." />
@@ -308,10 +356,11 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         <div class="max-h-80 overflow-auto rounded-xl border border-surface-200 dark:border-surface-800">
           <table class="w-full text-left text-xs">
             <thead class="sticky top-0 bg-surface-50 dark:bg-surface-900"><tr><th class="p-3">Waktu</th><th class="p-3">Koordinat</th><th class="p-3">Jarak tujuan</th><th class="p-3">Geofence</th></tr></thead>
-            <tbody><tr v-for="point in history.points" :key="point.gps_log_id" class="border-t border-surface-100 dark:border-surface-800"><td class="p-3">{{ formatDateTime(point.recorded_at) }}</td><td class="p-3 font-mono">{{ point.latitude }}, {{ point.longitude }}</td><td class="p-3">{{ point.distance_to_nearest_meters ?? '—' }} m</td><td class="p-3 font-semibold">{{ point.inside_geofence ? 'INSIDE' : 'OUTSIDE' }}</td></tr></tbody>
+            <tbody><tr v-for="point in history.points" :key="point.gps_log_id" class="border-t border-surface-100 dark:border-surface-800"><td class="p-3">{{ formatDateTime(point.recorded_at) }}</td><td class="p-3 font-mono">{{ point.latitude }}, {{ point.longitude }}</td><td class="p-3">{{ point.distance_to_nearest_meters ?? 'â€”' }} m</td><td class="p-3 font-semibold">{{ point.inside_geofence ? 'INSIDE' : 'OUTSIDE' }}</td></tr></tbody>
           </table>
         </div>
       </div>
     </AppCard>
   </div>
 </template>
+

@@ -52,6 +52,10 @@ export const endpoints = {
     notifications: () => '/dashboard/notifications',
   },
 
+  demo: {
+    reset: () => '/demo/reset',
+  },
+
   // --- Master operasional (CRUD + soft delete dengan expected_version) ---
   kitchens: collection('/kitchens'),
   storages: collection('/storages'),

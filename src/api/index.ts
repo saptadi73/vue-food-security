@@ -16,6 +16,7 @@ import { systemApi } from './modules/system'
 import { usersApi } from './modules/users'
 import { signaturesApi } from './modules/signatures'
 import { foodTemperatureApi } from './modules/foodTemperature'
+import { demoApi } from './modules/demo'
 
 export const fsos = {
   auth: authApi,
@@ -36,6 +37,7 @@ export const fsos = {
   deviceSessions: deviceSessionsApi,
   mqtt: mqttApi,
   traceability: traceabilityApi,
+  demo: demoApi,
 } as const
 
 export { api, setSessionExpiredHandler } from './client'

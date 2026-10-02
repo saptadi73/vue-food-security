@@ -1011,3 +1011,15 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Seed exhibition dapat dijalankan ulang untuk mengaktifkan warning batch pada data demo lama tanpa cleanup tenant.
 - Foto, signature, tujuan, penerimaan, konsumsi, recall, dan withdrawal yang sudah tersedia tetap dipertahankan.
 - Tidak ada perubahan kontrak API atau penyesuaian kode frontend pada tahap ini.
+
+## 2026-10-02 - Data exhibition sampai delivery aktif
+
+- Jalankan backend `demo_live_flow.py --stop-after-depart` untuk mengisi `FSOS_EXPO` sampai delivery berstatus `IN_TRANSIT`.
+- Setelah login ulang ke tenant tersebut, data tersedia pada Penerimaan Bahan, Batch Produksi, Paket & QR, Pengiriman Aktif, dan Live Tracking Delivery.
+- Arrival, penerimaan sekolah, signature, dan konsumsi dilanjutkan dari frontend; mode ini tidak mengubah kontrak API.
+
+## 2026-10-02 - Detail marker live tracking
+
+- Marker dapur dan sekolah dapat diklik untuk menampilkan nama, kode, alamat, dan koordinat lokasi.
+- Posisi GPS terkini memakai ikon mobil hijau dan popup berisi delivery, status, koordinat, serta waktu update GPS.
+- Legenda peta membedakan dapur asal, sekolah tujuan, dan armada terkini; tidak ada perubahan kontrak API.

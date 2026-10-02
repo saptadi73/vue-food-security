@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import AppCard from '@/components/ui/AppCard.vue'
@@ -9,6 +9,9 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseChart from '@/components/charts/BaseChart.vue'
 import { fsos } from '@/api'
 import { useAsyncData } from '@/composables/useAsyncData'
+import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import { useToastStore } from '@/stores/toast'
 import { formatDateTime, formatRelative } from '@/utils/format'
 
 const home = useAsyncData(() => fsos.dashboard.home())
@@ -18,6 +21,11 @@ const storage = useAsyncData(() => fsos.dashboard.storage())
 const recall = useAsyncData(() => fsos.dashboard.recall())
 const notifications = useAsyncData(() => fsos.dashboard.notifications())
 const temperatures = useAsyncData(() => fsos.dashboard.storageTemperatures({ limit: 8 }))
+const auth = useAuthStore()
+const confirm = useConfirm()
+const toast = useToastStore()
+const resetLoading = ref(false)
+const canResetDemo = computed(() => auth.roles.includes('ADMIN'))
 
 const anyLoading = computed(
   () => home.loading.value || holding.loading.value || fleet.loading.value,
@@ -31,6 +39,33 @@ function refreshAll() {
   void recall.refresh()
   void notifications.refresh()
   void temperatures.refresh()
+}
+
+async function resetDemo() {
+  const ok = await confirm.destructive({
+    title: 'Reset demo FSOS_EXPO',
+    message:
+      'Semua transaksi demo FSOS_EXPO akan dihapus agar alur exhibition dapat diulang. Master data, akun, dan login tetap dipertahankan.',
+    details: [
+      { label: 'Tenant', value: 'FSOS_EXPO' },
+      { label: 'Dihapus', value: 'Receiving, stok, produksi, paket, delivery, complaint, recall, event terkait' },
+    ],
+    confirmationPhrase: 'RESET FSOS_EXPO',
+    confirmLabel: 'Reset demo',
+  })
+  if (!ok) return
+
+  resetLoading.value = true
+  try {
+    const result = await fsos.demo.reset()
+    const removed = Object.values(result.removed).reduce((sum, value) => sum + value, 0)
+    toast.success('Demo berhasil di-reset', { description: `${removed} baris transaksi dihapus.` })
+    refreshAll()
+  } catch (error) {
+    toast.fromError(error, 'Gagal me-reset demo')
+  } finally {
+    resetLoading.value = false
+  }
 }
 
 /** Distribusi paket sepanjang rantai — sumber tunggal DashboardHomeData. */
@@ -107,6 +142,16 @@ const fleetSeries = computed(() => {
       icon="lucide:layout-dashboard"
     >
       <template #actions>
+        <AppButton
+          v-if="canResetDemo"
+          variant="danger"
+          icon="lucide:rotate-ccw"
+          :loading="resetLoading"
+          title="Hanya berhasil untuk tenant FSOS_EXPO"
+          @click="resetDemo"
+        >
+          Reset demo
+        </AppButton>
         <AppButton
           variant="outline"
           icon="lucide:rotate-cw"
