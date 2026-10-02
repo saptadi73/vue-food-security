@@ -1023,3 +1023,5 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Marker dapur dan sekolah dapat diklik untuk menampilkan nama, kode, alamat, dan koordinat lokasi.
 - Posisi GPS terkini memakai ikon mobil hijau dan popup berisi delivery, status, koordinat, serta waktu update GPS.
 - Legenda peta membedakan dapur asal, sekolah tujuan, dan armada terkini; tidak ada perubahan kontrak API.
+
+- Koreksi type lokal Google Maps: Marker listener dan InfoWindow kini terdeklarasi sehingga type-check popup marker lulus.

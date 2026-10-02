@@ -33,6 +33,12 @@ type MapInstance = {
 type MarkerInstance = {
   setPosition: (position: Position) => void
   setMap: (map: MapInstance | null) => void
+  addListener: (event: string, callback: () => void) => void
+}
+type InfoWindowInstance = {
+  setContent: (content: string) => void
+  open: (options: { map: MapInstance; anchor: MarkerInstance }) => void
+  close: () => void
 }
 type BoundsInstance = { extend: (position: Position) => void }
 type DirectionsResult = Record<string, unknown>
@@ -50,6 +56,7 @@ type MapsApi = {
   maps: {
     Map: new (element: HTMLElement, options: Record<string, unknown>) => MapInstance
     Marker: new (options: Record<string, unknown>) => MarkerInstance
+    InfoWindow: new (options?: Record<string, unknown>) => InfoWindowInstance
     LatLngBounds: new () => BoundsInstance
     DirectionsService: new () => DirectionsServiceInstance
     DirectionsRenderer: new (options: Record<string, unknown>) => DirectionsRendererInstance
@@ -60,6 +67,7 @@ type MapsApi = {
 declare global { interface Window { google?: MapsApi } }
 let map: MapInstance | null = null
 let vehicleMarker: MarkerInstance | null = null
+let infoWindow: InfoWindowInstance | null = null
 let contextMarkers: MarkerInstance[] = []
 let directionsService: DirectionsServiceInstance | null = null
 let directionsRenderer: DirectionsRendererInstance | null = null
@@ -363,4 +371,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     </AppCard>
   </div>
 </template>
+
+
+
 
