@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Bentuk kontrak bersama backend FSOS.
- * Referensi: docs/frontend-api.md — bagian "Envelope API" dan "Pagination".
+ * Referensi: docs/frontend-api.md â€” bagian "Envelope API" dan "Pagination".
  */
 
 export interface ApiMeta {
@@ -64,6 +64,7 @@ export interface AuthTokens {
 export interface AuthIdentity {
   user_id: Uuid
   tenant_id: Uuid
+    tenant_code: string
   roles: string[]
   permissions: string[]
 }
@@ -73,3 +74,6 @@ export type LoginPayload = {
   username: string
   password: string
 } & ({ tenant: string; tenant_id?: never } | { tenant_id: Uuid; tenant?: never })
+
+
+

@@ -1031,3 +1031,9 @@ dibersihkan. Ini pembaruan dokumentasi, tanpa perubahan endpoint/payload/event.
 - Hasil scan kemasan menampilkan penyebab incident, kode batch produksi, severity, complaint sumber, dan waktu laporan.
 - Ringkasan dampak menampilkan jumlah kemasan terdampak, terkirim, diterima, dikonsumsi, dan recalled beserta status/alasan recall.
 - Tindakan wajib berasal dari backend dan tombol laporan mengarahkan operator ke modul Keluhan menggunakan complaint ID aktif.
+
+## 2026-10-02 - Reset demo hanya pada tenant live
+
+- Identity sesi kini membaca `tenant_code` additive dari `/auth/me`.
+- Tombol Reset demo hanya terlihat bagi `ADMIN` yang sedang login pada `FSOS_EXPO`.
+- `FSOS_EXPO_INCIDENT` tidak menampilkan cleanup sehingga skenario incident/recall tetap terlindungi; backend tetap melakukan guard final.

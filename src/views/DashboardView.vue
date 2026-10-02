@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
@@ -25,7 +25,9 @@ const auth = useAuthStore()
 const confirm = useConfirm()
 const toast = useToastStore()
 const resetLoading = ref(false)
-const canResetDemo = computed(() => auth.roles.includes('ADMIN'))
+const canResetDemo = computed(() =>
+  auth.identity?.tenant_code === 'FSOS_EXPO' && auth.roles.includes('ADMIN'),
+)
 
 const anyLoading = computed(
   () => home.loading.value || holding.loading.value || fleet.loading.value,
@@ -68,7 +70,7 @@ async function resetDemo() {
   }
 }
 
-/** Distribusi paket sepanjang rantai — sumber tunggal DashboardHomeData. */
+/** Distribusi paket sepanjang rantai â€” sumber tunggal DashboardHomeData. */
 const packageFlow = computed(() => {
   const data = home.data.value
   return {
@@ -251,15 +253,15 @@ const fleetSeries = computed(() => {
           <dl class="mt-3 grid grid-cols-3 gap-2 text-center">
             <div class="rounded-xl bg-surface-50 py-2.5 dark:bg-surface-850">
               <dt class="text-[10px] font-bold text-surface-400 uppercase">Kendaraan</dt>
-              <dd class="text-lg font-extrabold">{{ fleet.data.value?.vehicles_active ?? '—' }}</dd>
+              <dd class="text-lg font-extrabold">{{ fleet.data.value?.vehicles_active ?? 'â€”' }}</dd>
             </div>
             <div class="rounded-xl bg-surface-50 py-2.5 dark:bg-surface-850">
               <dt class="text-[10px] font-bold text-surface-400 uppercase">Driver</dt>
-              <dd class="text-lg font-extrabold">{{ fleet.data.value?.drivers_active ?? '—' }}</dd>
+              <dd class="text-lg font-extrabold">{{ fleet.data.value?.drivers_active ?? 'â€”' }}</dd>
             </div>
             <div class="rounded-xl bg-surface-50 py-2.5 dark:bg-surface-850">
               <dt class="text-[10px] font-bold text-surface-400 uppercase">GPS log</dt>
-              <dd class="text-lg font-extrabold">{{ fleet.data.value?.gps_logs ?? '—' }}</dd>
+              <dd class="text-lg font-extrabold">{{ fleet.data.value?.gps_logs ?? 'â€”' }}</dd>
             </div>
           </dl>
         </AppCard>
@@ -319,11 +321,11 @@ const fleetSeries = computed(() => {
                   {{ item.storage_name }}
                 </span>
                 <span class="text-[11px] text-surface-400">
-                  {{ item.storage_type }} · {{ formatRelative(item.recorded_at) }}
+                  {{ item.storage_type }} Â· {{ formatRelative(item.recorded_at) }}
                 </span>
               </span>
               <span class="shrink-0 font-mono text-sm font-bold">
-                {{ item.temperature ?? '—'
+                {{ item.temperature ?? 'â€”'
                 }}<span class="text-xs text-surface-400">{{ item.unit ?? '' }}</span>
               </span>
               <AppBadge :status="item.status" />
@@ -354,7 +356,7 @@ const fleetSeries = computed(() => {
             >
               <dt class="text-surface-500 dark:text-surface-400">{{ entry.label }}</dt>
               <dd class="font-mono font-bold text-surface-900 dark:text-white">
-                {{ entry.value ?? '—' }}
+                {{ entry.value ?? 'â€”' }}
               </dd>
             </div>
           </dl>
@@ -362,9 +364,10 @@ const fleetSeries = computed(() => {
       </div>
 
       <p class="mt-5 text-center text-[11px] text-surface-400">
-        Terakhir dimuat {{ formatDateTime(new Date().toISOString()) }} · tidak ada subscription
+        Terakhir dimuat {{ formatDateTime(new Date().toISOString()) }} Â· tidak ada subscription
         realtime pada kontrak saat ini.
       </p>
     </template>
   </div>
 </template>
+
